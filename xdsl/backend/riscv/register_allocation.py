@@ -1,7 +1,13 @@
 from abc import ABC
 
 from xdsl.dialects.builtin import ModuleOp
-from xdsl.dialects.riscv import FloatRegisterType, Register, RegisterType, RISCVOp
+from xdsl.dialects.riscv import (
+    FloatRegisterType,
+    LabelOp,
+    Register,
+    RegisterType,
+    RISCVOp,
+)
 from xdsl.ir import SSAValue
 
 
@@ -109,11 +115,22 @@ class RegisterAllocatorLivenessBlockNaive(RegisterAllocator):
                     available_regs.append(reg.type.data.name)
 
     def allocate_registers(self, module: ModuleOp) -> None:
+        should_register_allocate = False
+
         for region in module.regions:
             for block in region.blocks:
                 to_free: list[SSAValue] = []
 
                 for op in block.walk_reverse():
+                    if (
+                        isinstance(op, LabelOp)
+                        and op.label.data == "_register_allocation"
+                    ):
+                        should_register_allocate = not should_register_allocate
+
+                    if not should_register_allocate:
+                        continue
+
                     for reg in to_free:
                         self._free(reg)
                     to_free.clear()

@@ -1,6 +1,7 @@
 // RUN: xdsl-opt -p "riscv-allocate-registers{allocation_strategy=LivenessBlockNaive limit_registers=2}" %s --print-op-generic | filecheck %s
 
 "builtin.module"() ({
+  "riscv.label"() {"label" = #riscv.label<"_register_allocation">} : () -> ()
   %0 = "riscv.li"() {"immediate" = 6 : i32} : () -> !riscv.reg<>
   %1 = "riscv.li"() {"immediate" = 5 : i32} : () -> !riscv.reg<s0>
   %2 = "riscv.add"(%0, %1) : (!riscv.reg<>, !riscv.reg<s0>) -> !riscv.reg<>
@@ -36,9 +37,11 @@
   %32 = "riscv.fcvt.s.w"(%30) : (!riscv.reg<>) -> !riscv.freg<>
   %33 = "riscv.fcvt.s.w"(%31) : (!riscv.reg<>) -> !riscv.freg<>
   %34 = "riscv.fadd.s"(%32, %33) : (!riscv.freg<>, !riscv.freg<>) -> !riscv.freg<>
+  "riscv.label"() {"label" = #riscv.label<"_register_allocation">} : () -> ()
 }) : () -> ()
 
 // CHECK: "builtin.module"() ({
+// CHECK:  "riscv.label"() {"label" = #riscv.label<"_register_allocation">} : () -> ()
 // CHECK:  %0 = "riscv.li"() {"immediate" = 6 : i32} : () -> !riscv.reg<j28>
 // CHECK:  %1 = "riscv.li"() {"immediate" = 5 : i32} : () -> !riscv.reg<s0>
 // CHECK:  %2 = "riscv.add"(%0, %1) : (!riscv.reg<j28>, !riscv.reg<s0>) -> !riscv.reg<j29>
@@ -74,4 +77,5 @@
 // CHECK:  %32 = "riscv.fcvt.s.w"(%30) : (!riscv.reg<ra>) -> !riscv.freg<ft1>
 // CHECK:  %33 = "riscv.fcvt.s.w"(%31) : (!riscv.reg<t0>) -> !riscv.freg<ft0>
 // CHECK:  %34 = "riscv.fadd.s"(%32, %33) : (!riscv.freg<ft1>, !riscv.freg<ft0>) -> !riscv.freg<j0>
+// CHECK: "riscv.label"() {"label" = #riscv.label<"_register_allocation">} : () -> ()
 // CHECK:}) : () -> ()
