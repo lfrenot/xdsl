@@ -47,6 +47,9 @@ from xdsl.transforms.experimental.dmp.stencil_global_to_local import (
     GlobalStencilToLocalStencil2DHorizontal,
     LowerHaloToMPI,
 )
+from xdsl.transforms.experimental.reconcile_unrealized_casts import (
+    ReconcileUnrealizedCastsPass,
+)
 from xdsl.transforms.experimental.stencil_shape_inference import (
     StencilShapeInferencePass,
 )
@@ -113,6 +116,7 @@ def get_all_passes() -> list[type[ModulePass]]:
         RISCVLowerArith,
         StencilShapeInferencePass,
         StencilStorageMaterializationPass,
+        ReconcileUnrealizedCastsPass,
     ]
 
 
