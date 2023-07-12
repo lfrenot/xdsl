@@ -5,6 +5,9 @@ from io import StringIO
 from typing import IO, Callable, Dict, List, Sequence, Type
 
 from xdsl.backend.riscv.lowering.riscv_arith_lowering import RISCVLowerArith
+from xdsl.backend.riscv.lowering.riscv_stack_memref_lowering import (
+    RISCVStackMemrefLower,
+)
 from xdsl.dialects.affine import Affine
 from xdsl.dialects.arith import Arith
 from xdsl.dialects.builtin import Builtin, ModuleOp
@@ -114,6 +117,7 @@ def get_all_passes() -> list[type[ModulePass]]:
         PrintfToLLVM,
         RISCVRegisterAllocation,
         RISCVLowerArith,
+        RISCVStackMemrefLower,
         StencilShapeInferencePass,
         StencilStorageMaterializationPass,
         ReconcileUnrealizedCastsPass,
