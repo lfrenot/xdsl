@@ -39,6 +39,7 @@ from xdsl.ir import Dialect, MLContext
 from xdsl.parser import ParseError, Parser
 from xdsl.passes import ModulePass
 from xdsl.printer import Printer
+from xdsl.transforms.cf_to_riscv import CfToRISCV
 from xdsl.transforms.dead_code_elimination import DeadCodeElimination
 from xdsl.transforms.experimental.convert_stencil_to_ll_mlir import (
     ConvertStencilToLLMLIRPass,
@@ -104,6 +105,7 @@ def get_all_dialects() -> list[Dialect]:
 def get_all_passes() -> list[type[ModulePass]]:
     """Return the list of all available passes."""
     return [
+        CfToRISCV,
         ConvertStencilToLLMLIRPass,
         DeadCodeElimination,
         DesymrefyPass,
