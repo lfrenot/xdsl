@@ -4,7 +4,11 @@ import sys
 from io import StringIO
 from typing import IO, Callable, Dict, List, Sequence, Type
 
+from xdsl.backend.riscv.lowering.lower_riscv_func import LowerFuncToRiscvFunc
 from xdsl.backend.riscv.lowering.riscv_arith_lowering import RISCVLowerArith
+from xdsl.backend.riscv.lowering.riscv_post_regalloc_cleanup import (
+    RISCVPostRegallocCleanup,
+)
 from xdsl.backend.riscv.lowering.riscv_stack_memref_lowering import (
     RISCVStackMemrefLower,
 )
@@ -123,6 +127,8 @@ def get_all_passes() -> list[type[ModulePass]]:
         StencilShapeInferencePass,
         StencilStorageMaterializationPass,
         ReconcileUnrealizedCastsPass,
+        LowerFuncToRiscvFunc,
+        RISCVPostRegallocCleanup,
     ]
 
 

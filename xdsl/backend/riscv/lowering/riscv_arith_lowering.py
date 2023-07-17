@@ -80,11 +80,9 @@ class LowerArithIndexCast(RewritePattern):
     def match_and_rewrite(
         self, op: arith.IndexCastOp, rewriter: PatternRewriter
     ) -> None:
-        """
-        On a RV32 triple, the index type is 32 bits, so we can just drop the cast.
-        """
-
-        rewriter.replace_matched_op([], [op.input])
+        rewriter.replace_matched_op(
+            [UnrealizedConversionCastOp.get(op.operands, (op.result.type,))]
+        )
 
 
 class LowerArithAddi(RewritePattern):
