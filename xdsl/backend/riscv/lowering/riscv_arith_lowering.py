@@ -418,7 +418,7 @@ class LowerArithDivf(RewritePattern):
         lhs, rhs = cast_values_to_registers([op.lhs, op.rhs], rewriter)
         rewriter.replace_matched_op(
             [
-                fdivs := riscv.FMulSOp(lhs, rhs),
+                fdivs := riscv.FDivSOp(lhs, rhs),
                 UnrealizedConversionCastOp.get(fdivs.results, (op.result.type,)),
             ]
         )
@@ -561,8 +561,13 @@ class LowerArithCmpf(RewritePattern):
                 )
             # ule
             case 12:
-                flt = riscv.FltSOP(rhs, lhs)
-                rewriter.replace_matched_op([flt, riscv.XoriOp(flt, 1)])
+                rewriter.replace_matched_op(
+                    [
+                        flt := riscv.FltSOP(rhs, lhs),
+                        xor := riscv.XoriOp(flt, 1),
+                        UnrealizedConversionCastOp.get(xor.results, (op.result.type,)),
+                    ]
+                )
             # une
             case 13:
                 rewriter.replace_matched_op(
