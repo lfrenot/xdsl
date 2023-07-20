@@ -1,9 +1,9 @@
-import random
 from abc import ABC
+from typing import List
 
-from xdsl.dialects import cf, riscv
+from xdsl.dialects import cf, riscv, riscv_func
 from xdsl.dialects.builtin import ModuleOp, UnrealizedConversionCastOp
-from xdsl.ir import Block, MLContext
+from xdsl.ir import Block, MLContext, Operation
 from xdsl.passes import ModulePass
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
@@ -15,58 +15,63 @@ from xdsl.pattern_rewriter import (
 
 
 def label_block(
-    block: Block, rewriter: PatternRewriter, at_start: bool = True
-) -> riscv.LabelOp:
-    if at_start and isinstance(block.ops.first, riscv.LabelOp):
-        return block.ops.first
-    elif not at_start and isinstance(block.ops.last, riscv.LabelOp):
-        return block.ops.last
-    else:
-        parent_region = block.parent
-        block_idx = (
-            parent_region.get_block_index(block)
-            if parent_region
-            else random.randint(0, 100)
-        )
-        label_str = "bb" + str(block_idx)
-        if not at_start:
-            label_str += "end"
+    block: Block, rewriter: PatternRewriter, at_start: bool = True, at_end: bool = False
+) -> List[riscv.LabelOp]:
+    labels: List[riscv.LabelOp] = []
 
-        label_op = riscv.LabelOp(label_str)
-        if parent_region:
-            parent_region.detach_block(block)
+    if at_start and isinstance(block.ops.first, riscv.LabelOp):
+        at_start = False
+        labels.append(block.ops.first)
+
+    if at_end and isinstance(block.ops.last, riscv.LabelOp):
+        at_end = False
+        labels.append(block.ops.last)
+
+    if (at_start or at_end) and (parent_region := block.parent):
+        block_idx = parent_region.get_block_index(block)
 
         if at_start:
-            rewriter.insert_op_at_start(label_op, block)
-        else:
-            rewriter.insert_op_at_end(label_op, block)
+            label_start = "bb" + str(block_idx)
+            label_op = riscv.LabelOp(label_start)
+            label_block = Block([label_op, riscv.TermOp()])
+            parent_region.insert_block(label_block, block_idx)
 
-        if parent_region:
-            parent_region.insert_block(block, block_idx)
+            labels.append(label_op)
 
-        return label_op
+        if at_end:
+            label_end = "bb" + str(block_idx) + "e"
+            label_op = riscv.LabelOp(label_end)
+            label_block = Block([label_op, riscv.TermOp()])
+            parent_region.insert_block(label_block, block_idx + 1)
+
+            labels.append(label_op)
+
+    return labels
 
 
-def add_end_label(block: Block) -> riscv.LabelOp | None:
+def add_jump(block: Block, label: riscv.LabelOp) -> None:
     if parent_region := block.parent:
         block_idx = parent_region.get_block_index(block)
-        label_str = "bb" + str(block_idx) + "end"
-        label_op = riscv.LabelOp(label_str)
-
-        parent_region.insert_block(Block([label_op, riscv.NopOp()]), block_idx + 1)
-
-        return label_op
-
-
-def add_jump(block: Block, label: riscv.LabelOp):
-    if parent_region := block.parent:
-        block_idx = parent_region.get_block_index(block)
-        parent_region.detach_block(block)
-
         jmp = riscv.JOp(label.label)
-        parent_region.insert_block(Block([jmp]), block_idx)
+        parent_region.insert_block(Block([jmp]), block_idx + 1)
 
-        parent_region.insert_block(block, block_idx)
+    return None
+
+
+class LowerBlockArgs(RewritePattern):
+    @op_type_rewrite_pattern
+    def match_and_rewrite(
+        self, op: riscv_func.FuncOp, rewriter: PatternRewriter
+    ) -> None:
+        for block in op.func_body.blocks:
+            for i, arg in enumerate(block.args):
+                reg_idx = op.func_body.get_block_index(block) * 100 + i
+                rarg = riscv.GetRegisterOp(
+                    riscv.RegisterType(riscv.Register(f"jba{reg_idx}"))
+                )
+                arg.replace_by(rarg.res)
+                rewriter.erase_block_argument(arg)
+                rewriter.insert_op_at_start(rarg, block)
 
 
 class LowerConditionalBranchToRISCV(RewritePattern, ABC):
@@ -75,18 +80,43 @@ class LowerConditionalBranchToRISCV(RewritePattern, ABC):
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: cf.ConditionalBranch, rewriter: PatternRewriter, /):
         _ = label_block(op.then_block, rewriter)
-        else_label = label_block(op.else_block, rewriter)
-        else_label_end = add_end_label(op.else_block)
-        if else_label_end:
-            add_jump(op.then_block, else_label_end)
+        else_labels = label_block(op.else_block, rewriter, True, True)
+        add_jump(op.then_block, else_labels[1])
+
+        then_idx = 0
+        else_idx = 0
+        if parent := op.then_block.parent:
+            then_idx = parent.get_block_index(op.then_block)
+        if parent := op.else_block.parent:
+            else_idx = parent.get_block_index(op.else_block)
+
+        to_replace: List[Operation] = []
+
+        for i, arg in enumerate(op.then_arguments):
+            reg_idx = then_idx * 100 + i
+            cast = UnrealizedConversionCastOp.get(
+                [arg], [riscv.RegisterType(riscv.Register(f"jba{reg_idx}"))]
+            )
+            to_replace.append(cast)
+
+        for i, arg in enumerate(op.else_arguments):
+            reg_idx = else_idx * 100 + i
+            cast = UnrealizedConversionCastOp.get(
+                [arg], [riscv.RegisterType(riscv.Register(f"jba{reg_idx}"))]
+            )
+            to_replace.append(cast)
 
         cond = UnrealizedConversionCastOp.get(
             [op.cond], [riscv.RegisterType(riscv.Register())]
         )
         zero = riscv.GetRegisterOp(riscv.Registers.ZERO)
-        branch = riscv.BeqOp(cond.results[0], zero, else_label.label)
+        branch = riscv.BeqOp(cond.results[0], zero, else_labels[0].label)
 
-        rewriter.replace_matched_op([cond, zero, branch])
+        to_replace.append(cond)
+        to_replace.append(zero)
+        to_replace.append(branch)
+
+        rewriter.replace_matched_op(to_replace)
 
 
 class CfToRISCV(ModulePass):
@@ -99,3 +129,4 @@ class CfToRISCV(ModulePass):
         PatternRewriteWalker(
             GreedyRewritePatternApplier([LowerConditionalBranchToRISCV()])
         ).rewrite_module(op)
+        PatternRewriteWalker(LowerBlockArgs()).rewrite_module(op)

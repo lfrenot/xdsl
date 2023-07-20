@@ -1047,7 +1047,7 @@ class CsrBitwiseImmOperation(IRDLOperation, RISCVInstruction, ABC):
 
 # region RV32I/RV64I: 2.4 Integer Computational Instructions
 
-## Integer Register-Immediate Instructions
+# Integer Register-Immediate Instructions
 
 
 @irdl_op_definition
@@ -1216,7 +1216,7 @@ class MVOp(RdRsIntegerOperation):
     name = "riscv.mv"
 
 
-## Integer Register-Register Operations
+# Integer Register-Register Operations
 
 
 @irdl_op_definition
@@ -1367,6 +1367,21 @@ class NopOp(NullaryOperation):
 
     # TODO CFToRISCV lowering
     traits = frozenset([IsTerminator()])
+
+
+@irdl_op_definition
+class TermOp(NullaryOperation):
+    """
+    Pseudo-terminator operation that does not emit any assembly.
+    """
+
+    name = "riscv.termop"
+
+    # TODO CFToRISCV lowering
+    traits = frozenset([IsTerminator()])
+
+    def assembly_line(self) -> str | None:
+        return None
 
 
 # endregion
@@ -1788,7 +1803,7 @@ class CsrrciOp(CsrBitwiseImmOperation):
 
 # region RV32M/RV64M: 7 “M” Standard Extension for Integer Multiplication and Division
 
-## Multiplication Operations
+# Multiplication Operations
 
 
 @irdl_op_definition
@@ -1843,7 +1858,7 @@ class MulhuOp(RdRsRsIntegerOperation):
     name = "riscv.mulhu"
 
 
-## Division Operations
+# Division Operations
 @irdl_op_definition
 class DivOp(RdRsRsIntegerOperation):
     """
@@ -2908,6 +2923,7 @@ RISCV = Dialect(
         SubOp,
         SraOp,
         NopOp,
+        TermOp,
         JalOp,
         JOp,
         JalrOp,
