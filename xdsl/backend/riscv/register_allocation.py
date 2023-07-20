@@ -1,8 +1,36 @@
 from abc import ABC
+from typing import Set
 
 from xdsl.dialects.builtin import ModuleOp
 from xdsl.dialects.riscv import FloatRegisterType, IntRegisterType, LabelOp, RISCVOp
 from xdsl.ir import SSAValue
+
+
+def _gather_allocated(module: ModuleOp):
+    taken_regs: Set[str] = set()
+
+    for op in module.walk():
+        if not isinstance(op, RISCVOp):
+            continue
+
+        _register_types = (IntRegisterType, FloatRegisterType)
+
+        for operand in op.operands:
+            if isinstance(operand.type, _register_types) and operand.type.is_allocated:
+                reg_name = operand.type.register_name
+
+                if not reg_name.startswith("j"):
+                    print(f"found {reg_name}")
+                    taken_regs.add(reg_name)
+
+        for result in op.results:
+            if isinstance(result.type, _register_types) and result.type.is_allocated:
+                reg_name = result.type.register_name
+
+                if not reg_name.startswith("j"):
+                    taken_regs.add(reg_name)
+
+    return taken_regs
 
 
 class RegisterAllocator(ABC):
@@ -100,6 +128,13 @@ class RegisterAllocatorLivenessBlockNaive(RegisterAllocator):
 
     def allocate_registers(self, module: ModuleOp) -> None:
         should_register_allocate = False
+
+        taken = _gather_allocated(module)
+
+        for _, reg_set in self.register_sets.items():
+            for t in taken:
+                if t in reg_set:
+                    reg_set.remove(t)
 
         for region in module.regions:
             for block in region.blocks:
