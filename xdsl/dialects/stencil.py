@@ -1,16 +1,10 @@
 from __future__ import annotations
 
 from operator import add, lt, neg
-from typing import Iterable, Iterator, Sequence, TypeVar, cast
+from typing import Generic, Iterable, Iterator, Sequence, TypeVar, cast
 
 from xdsl.dialects import builtin, memref
-from xdsl.dialects.builtin import (
-    AnyFloat,
-    AnyIntegerAttr,
-    ArrayAttr,
-    IntAttr,
-    ParametrizedAttribute,
-)
+from xdsl.dialects.builtin import AnyFloat, AnyIntegerAttr, ArrayAttr, IntAttr
 from xdsl.ir import (
     Attribute,
     Block,
@@ -21,14 +15,13 @@ from xdsl.ir import (
     SSAValue,
     TypeAttribute,
 )
+from xdsl.ir.core import ParametrizedAttribute
 from xdsl.irdl import (
-    Generic,
     IRDLOperation,
     Operand,
     ParameterDef,
     VarOperand,
     VarOpResult,
-    VerifyException,
     attr_def,
     irdl_attr_definition,
     irdl_op_definition,
@@ -42,6 +35,7 @@ from xdsl.irdl import (
 from xdsl.parser import AttrParser
 from xdsl.printer import Printer
 from xdsl.traits import HasParent, IsolatedFromAbove, IsTerminator
+from xdsl.utils.exceptions import VerifyException
 from xdsl.utils.hints import isa
 
 _FieldTypeElement = TypeVar("_FieldTypeElement", bound=Attribute, covariant=True)
@@ -53,8 +47,8 @@ class IndexAttr(ParametrizedAttribute, Iterable[int]):
 
     array: ParameterDef[ArrayAttr[IntAttr]]
 
-    @staticmethod
-    def parse_parameters(parser: AttrParser) -> list[Attribute]:
+    @classmethod
+    def parse_parameters(cls, parser: AttrParser) -> list[Attribute]:
         """Parse the attribute parameters."""
         ints = parser.parse_comma_separated_list(
             parser.Delimiter.ANGLE, lambda: parser.parse_integer(allow_boolean=False)
@@ -186,8 +180,8 @@ class StencilType(
     def get_element_type(self) -> _FieldTypeElement:
         return self.element_type
 
-    @staticmethod
-    def parse_parameters(parser: AttrParser) -> list[Attribute]:
+    @classmethod
+    def parse_parameters(cls, parser: AttrParser) -> list[Attribute]:
         def parse_interval() -> tuple[int, int] | int:
             if parser.parse_optional_punctuation("?"):
                 return -1
@@ -201,11 +195,11 @@ class StencilType(
         parser.parse_characters("<")
         bounds = [parse_interval()]
         parser.parse_shape_delimiter()
-        typ = parser.parse_optional_type()
-        while typ is None:
+        opt_type = parser.parse_optional_type()
+        while opt_type is None:
             bounds.append(parse_interval())
             parser.parse_shape_delimiter()
-            typ = parser.parse_optional_type()
+            opt_type = parser.parse_optional_type()
         parser.parse_characters(">")
         if isa(bounds, list[tuple[int, int]]):
             bounds = StencilBoundsAttr(bounds)
@@ -214,7 +208,7 @@ class StencilType(
         else:
             parser.raise_error("stencil types can only be fully dynamic or sized.")
 
-        return [bounds, typ]
+        return [bounds, opt_type]
 
     def print_parameters(self, printer: Printer) -> None:
         printer.print("<")
@@ -237,7 +231,7 @@ class StencilType(
         | int
         | IntAttr
         | StencilBoundsAttr,
-        typ: _FieldTypeElement,
+        element_type: _FieldTypeElement,
     ) -> None:
         """
             A StencilBoundsAttr encodes known bounds, where an IntAttr encodes the
@@ -254,7 +248,7 @@ class StencilType(
             nbounds = IntAttr(bounds)
         else:
             nbounds = bounds
-        return super().__init__([nbounds, typ])
+        return super().__init__([nbounds, element_type])
 
 
 @irdl_attr_definition
@@ -340,16 +334,16 @@ class ApplyOp(IRDLOperation):
             raise VerifyException(
                 f"Expected stencil.apply to have at least 1 result, got {len(self.res)}"
             )
-        res_typ = cast(TempType[Attribute], self.res[0].type)
+        res_type = cast(TempType[Attribute], self.res[0].type)
         for other in self.res[1:]:
             other = cast(TempType[Attribute], other.type)
-            if res_typ.bounds != other.bounds:
+            if res_type.bounds != other.bounds:
                 raise VerifyException(f"Expected all output types bounds to be equals.")
 
     def get_rank(self) -> int:
-        res_typ = self.res[0].type
-        assert isa(res_typ, TempType[Attribute])
-        return res_typ.get_num_dims()
+        res_type = self.res[0].type
+        assert isa(res_type, TempType[Attribute])
+        return res_type.get_num_dims()
 
 
 @irdl_op_definition
@@ -526,13 +520,13 @@ class AccessOp(IRDLOperation):
         # cf https://github.com/xdslproject/xdsl/issues/1112
         apply.verify_()
 
-        temp_typ = self.temp.type
-        assert isa(temp_typ, TempType[Attribute])
-        if temp_typ.get_num_dims() != apply.get_rank():
+        temp_type = self.temp.type
+        assert isa(temp_type, TempType[Attribute])
+        if temp_type.get_num_dims() != apply.get_rank():
             if self.offset_mapping is None:
                 raise VerifyException(
                     f"Expected stencil.access operand to be of rank {apply.get_rank()} "
-                    f"to match its parent apply, got {temp_typ.get_num_dims()} without "
+                    f"to match its parent apply, got {temp_type.get_num_dims()} without "
                     f"explict offset mapping provided"
                 )
 
@@ -557,9 +551,9 @@ class AccessOp(IRDLOperation):
                         )
                 prev_offset = offset.data
 
-        if len(self.offset) != temp_typ.get_num_dims():
+        if len(self.offset) != temp_type.get_num_dims():
             raise VerifyException(
-                f"Expected offset's rank to be {temp_typ.get_num_dims()} to match the "
+                f"Expected offset's rank to be {temp_type.get_num_dims()} to match the "
                 f"operand's rank, got {len(self.offset)}"
             )
 
@@ -583,17 +577,17 @@ class LoadOp(IRDLOperation):
         lb: IndexAttr | None = None,
         ub: IndexAttr | None = None,
     ):
-        field_t = SSAValue.get(field).type
-        assert isa(field_t, FieldType[Attribute])
+        field_type = SSAValue.get(field).type
+        assert isa(field_type, FieldType[Attribute])
 
         if lb is None or ub is None:
-            res_typ = TempType(field_t.get_num_dims(), field_t.element_type)
+            res_type = TempType(field_type.get_num_dims(), field_type.element_type)
         else:
-            res_typ = TempType(zip(lb, ub), field_t.element_type)
+            res_type = TempType(zip(lb, ub), field_type.element_type)
 
         return LoadOp.build(
             operands=[field],
-            result_types=[res_typ],
+            result_types=[res_type],
         )
 
     def verify_(self) -> None:

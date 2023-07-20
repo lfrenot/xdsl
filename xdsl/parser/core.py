@@ -6,7 +6,11 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Any, Iterable, Sequence, cast
 
-from xdsl.dialects.builtin import DictionaryAttr, ModuleOp, UnregisteredAttr
+from xdsl.dialects.builtin import (
+    DictionaryAttr,
+    ModuleOp,
+    UnregisteredAttr,
+)
 from xdsl.ir import (
     Attribute,
     Block,
@@ -18,7 +22,7 @@ from xdsl.ir import (
     SSAValue,
 )
 from xdsl.parser.attribute_parser import AttrParser
-from xdsl.parser.base_parser import ParserState
+from xdsl.parser.base_parser import ParserState, Position
 from xdsl.utils.exceptions import MultipleSpansParseError
 from xdsl.utils.lexer import Input, Lexer, Span, Token
 
@@ -107,15 +111,36 @@ class Parser(AttrParser):
         self.forward_block_references = dict()
         self.forward_ssa_references = dict()
 
-    def parse_module(self) -> ModuleOp:
-        op = self.parse_optional_operation()
+    def parse_module(self, allow_implicit_module: bool = True) -> ModuleOp:
+        module_op: Operation
 
-        if op is None:
-            self.raise_error("Could not parse entire input!")
+        if not allow_implicit_module:
+            parsed_op = self.parse_optional_operation()
 
-        if not isinstance(op, ModuleOp):
-            self._resume_from(0)
-            self.raise_error("builtin.module operation expected", 0)
+            if parsed_op is None:
+                self.raise_error("Could not parse entire input!")
+
+            if not isinstance(parsed_op, ModuleOp):
+                self._resume_from(0)
+                self.raise_error("builtin.module operation expected", 0)
+
+            module_op = parsed_op
+        else:
+            parsed_ops: list[Operation] = []
+
+            while self._current_token.kind != Token.Kind.EOF:
+                if (parsed_op := self.parse_optional_operation()) is None:
+                    self.raise_error("Could not parse entire input!")
+                parsed_ops.append(parsed_op)
+
+            if len(parsed_ops) == 0:
+                self.raise_error("Could not parse entire input!")
+
+            module_op = (
+                parsed_ops[0]
+                if isinstance(parsed_ops[0], ModuleOp) and len(parsed_ops) == 1
+                else ModuleOp(parsed_ops)
+            )
 
         if self.forward_ssa_references:
             value_names = ", ".join(
@@ -126,7 +151,7 @@ class Parser(AttrParser):
             else:
                 self.raise_error(f"value {value_names} was used but not defined")
 
-        return op
+        return module_op
 
     def _get_block_from_name(self, block_name: Span) -> Block:
         """
@@ -613,6 +638,19 @@ class Parser(AttrParser):
             self.raise_error("Expected region!")
         return region
 
+    def parse_region_list(self) -> list[Region]:
+        """
+        Parse the list of operation regions.
+        If no regions are present, return an empty list.
+        Parse a list of regions with format:
+           regions-list ::= `(` region (`,` region)* `)`
+        """
+        if self._current_token.kind == Token.Kind.L_PAREN:
+            return self.parse_comma_separated_list(
+                self.Delimiter.PAREN, self.parse_region, " in operation region list"
+            )
+        return []
+
     def parse_op(self) -> Operation:
         return self.parse_operation()
 
@@ -758,6 +796,35 @@ class Parser(AttrParser):
     def parse_optional_attr_dict(self) -> dict[str, Attribute]:
         return self.parse_optional_dictionary_attr_dict()
 
+    def resolve_operands(
+        self,
+        args: Sequence[UnresolvedOperand],
+        input_types: Sequence[Attribute],
+        error_pos: Position,
+    ) -> Sequence[SSAValue]:
+        """
+        Resolve unresolved operands. For each operand in `args` and its corresponding input
+        type the following happens:
+
+        If the operand is not yet defined, it creates a forward reference.
+        If the operand is already defined, it returns the corresponding SSA value,
+        and checks that the type is consistent.
+
+        If the length of args and input_types does not match, an error is raised at
+        the location error_pos.
+        """
+        length = len(list(input_types))
+        if len(args) != length:
+            self.raise_error(
+                f"expected {length} operand types but had {len(args)}",
+                error_pos,
+            )
+
+        return [
+            self.resolve_operand(operand, type)
+            for operand, type in zip(args, input_types)
+        ]
+
     def _parse_generic_operation(self, op_type: type[Operation]) -> Operation:
         """
         Parse an operation with format:
@@ -770,7 +837,7 @@ class Parser(AttrParser):
             dictionary-attribute  ::= `{` (attribute-entry (`,` attribute-entry)*)? `}`
         """
         # Parse arguments
-        args = self._parse_op_args_list()
+        args = self.parse_op_args_list()
 
         # Parse successors
         successors = self.parse_optional_successors()
@@ -778,11 +845,7 @@ class Parser(AttrParser):
             successors = []
 
         # Parse regions
-        regions = []
-        if self._current_token.kind == Token.Kind.L_PAREN:
-            regions = self.parse_comma_separated_list(
-                self.Delimiter.PAREN, self.parse_region, " in operation region list"
-            )
+        regions = self.parse_region_list()
 
         # Parse attribute dictionary
         attrs = self.parse_optional_attr_dict()
@@ -792,20 +855,11 @@ class Parser(AttrParser):
         func_type_pos = self._current_token.span.start
 
         # Parse function type
-        func_type = self._parse_function_type()
-
-        if len(args) != len(func_type.inputs):
-            self.raise_error(
-                f"expected {len(func_type.inputs)} operand types but had {len(args)}",
-                func_type_pos,
-            )
+        func_type = self.parse_function_type()
 
         self._parse_optional_location()
 
-        operands = [
-            self.resolve_operand(operand, type)
-            for operand, type in zip(args, func_type.inputs)
-        ]
+        operands = self.resolve_operands(args, func_type.inputs.data, func_type_pos)
 
         return op_type.create(
             operands=operands,
@@ -857,7 +911,7 @@ class Parser(AttrParser):
             lambda: self.expect(self.parse_successor, "block-id expected"),
         )
 
-    def _parse_op_args_list(self) -> list[UnresolvedOperand]:
+    def parse_op_args_list(self) -> list[UnresolvedOperand]:
         """
         Parse a list of arguments with format:
            args-list ::= `(` value-use-list? `)`

@@ -11,12 +11,12 @@ def cast_values_to_registers(
 ) -> list[OpResult]:
     results: list[OpResult] = []
     for op in operands:
-        cast_type = riscv.RegisterType(riscv.Register())
+        cast_type = riscv.IntRegisterType.unallocated()
         if isinstance(op.type, AnyFloat):
-            cast_type = riscv.FloatRegisterType(riscv.Register())
+            cast_type = riscv.FloatRegisterType.unallocated()
         elif isinstance(op.type, builtin.IntegerType | builtin.IndexType):
-            cast_type = riscv.RegisterType(riscv.Register())
-        elif isinstance(op.type, riscv.RegisterType | riscv.FloatRegisterType):
+            cast_type = riscv.IntRegisterType.unallocated()
+        elif isinstance(op.type, riscv.IntRegisterType | riscv.FloatRegisterType):
             cast_type = op.type
 
         cast = builtin.UnrealizedConversionCastOp.get([op], (cast_type,))

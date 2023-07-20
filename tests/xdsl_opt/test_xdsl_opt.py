@@ -6,8 +6,9 @@ import pytest
 from xdsl.dialects import builtin
 from xdsl.ir import MLContext
 from xdsl.passes import ModulePass
+from xdsl.tools.command_line_tool import get_all_dialects
 from xdsl.utils.exceptions import DiagnosticException
-from xdsl.xdsl_opt_main import get_all_dialects, get_all_passes, xDSLOptMain
+from xdsl.xdsl_opt_main import get_all_passes, xDSLOptMain
 
 
 def test_dialects_and_passes():
@@ -38,7 +39,22 @@ def test_empty_program():
 @pytest.mark.parametrize(
     "args, expected_error",
     [
-        (["tests/xdsl_opt/not_module.mlir"], "builtin.module operation expected"),
+        (
+            ["--no-implicit-module", "tests/xdsl_opt/not_module.mlir"],
+            "builtin.module operation expected",
+        ),
+        (
+            ["--no-implicit-module", "tests/xdsl_opt/incomplete_program.mlir"],
+            "Could not parse entire input",
+        ),
+        (
+            ["tests/xdsl_opt/incomplete_program_residual.mlir"],
+            "Could not parse entire input",
+        ),
+        (
+            ["tests/xdsl_opt/incomplete_program.mlir"],
+            "Could not parse entire input",
+        ),
         (["tests/xdsl_opt/empty_program.wrong"], "Unrecognized file extension 'wrong'"),
     ],
 )

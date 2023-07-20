@@ -89,13 +89,13 @@ class HaloExchangeDecl(ParametrizedAttribute):
         source_offset: Sequence[int],
         neighbor: Sequence[int],
     ):
-        typ = builtin.i64
+        data_type = builtin.i64
         super().__init__(
             [
-                builtin.DenseArrayBase.from_list(typ, offset),
-                builtin.DenseArrayBase.from_list(typ, size),
-                builtin.DenseArrayBase.from_list(typ, source_offset),
-                builtin.DenseArrayBase.from_list(typ, neighbor),
+                builtin.DenseArrayBase.from_list(data_type, offset),
+                builtin.DenseArrayBase.from_list(data_type, size),
+                builtin.DenseArrayBase.from_list(data_type, source_offset),
+                builtin.DenseArrayBase.from_list(data_type, neighbor),
             ]
         )
 
@@ -233,6 +233,9 @@ class HaloShapeInformation(ParametrizedAttribute):
 
     @property
     def dims(self) -> int:
+        """
+        Number of axis of the data (len(shape))
+        """
         return len(self.core_ub)
 
     @staticmethod
@@ -242,10 +245,10 @@ class HaloShapeInformation(ParametrizedAttribute):
         core_ub: stencil.IndexAttr,
         buff_ub: stencil.IndexAttr,
     ):
-        typ = builtin.i64
+        data_type = builtin.i64
         return HaloShapeInformation(
             [
-                builtin.DenseArrayBase.from_list(typ, tuple(data))
+                builtin.DenseArrayBase.from_list(data_type, tuple(data))
                 for data in (buff_lb, buff_ub, core_lb, core_ub)
             ]
         )
@@ -290,8 +293,8 @@ class HaloShapeInformation(ParametrizedAttribute):
         printer.print_string("x".join(f"{list(vals)}" for vals in dims))
         printer.print_string(">")
 
-    @staticmethod
-    def parse_parameters(parser: AttrParser) -> list[Attribute]:
+    @classmethod
+    def parse_parameters(cls, parser: AttrParser) -> list[Attribute]:
         """
         Parses the attribute, the format of it is:
 
@@ -321,9 +324,9 @@ class HaloShapeInformation(ParametrizedAttribute):
                 break
         parser.parse_characters(">")
 
-        typ = builtin.i64
+        data_type = builtin.i64
         return [
-            builtin.DenseArrayBase.from_list(typ, data)
+            builtin.DenseArrayBase.from_list(data_type, data)
             for data in (buff_lb, buff_ub, core_lb, core_ub)
         ]
 
@@ -356,8 +359,8 @@ class NodeGrid(ParametrizedAttribute):
     def node_count(self) -> int:
         return prod(self.as_tuple())
 
-    @staticmethod
-    def parse_parameters(parser: AttrParser) -> list[Attribute]:
+    @classmethod
+    def parse_parameters(cls, parser: AttrParser) -> list[Attribute]:
         parser.parse_characters("<")
 
         shape: list[int] = [parser.parse_integer(allow_negative=False)]

@@ -66,9 +66,7 @@ class LowerBlockArgs(RewritePattern):
         for block in op.func_body.blocks:
             for i, arg in enumerate(block.args):
                 reg_idx = op.func_body.get_block_index(block) * 100 + i
-                rarg = riscv.GetRegisterOp(
-                    riscv.RegisterType(riscv.Register(f"jba{reg_idx}"))
-                )
+                rarg = riscv.GetRegisterOp(riscv.IntRegisterType(f"jba{reg_idx}"))
                 arg.replace_by(rarg.res)
                 rewriter.erase_block_argument(arg)
                 rewriter.insert_op_at_start(rarg, block)
@@ -95,19 +93,19 @@ class LowerConditionalBranchToRISCV(RewritePattern, ABC):
         for i, arg in enumerate(op.then_arguments):
             reg_idx = then_idx * 100 + i
             cast = UnrealizedConversionCastOp.get(
-                [arg], [riscv.RegisterType(riscv.Register(f"jba{reg_idx}"))]
+                [arg], [riscv.IntRegisterType(f"jba{reg_idx}")]
             )
             to_replace.append(cast)
 
         for i, arg in enumerate(op.else_arguments):
             reg_idx = else_idx * 100 + i
             cast = UnrealizedConversionCastOp.get(
-                [arg], [riscv.RegisterType(riscv.Register(f"jba{reg_idx}"))]
+                [arg], [riscv.IntRegisterType(f"jba{reg_idx}")]
             )
             to_replace.append(cast)
 
         cond = UnrealizedConversionCastOp.get(
-            [op.cond], [riscv.RegisterType(riscv.Register())]
+            [op.cond], [riscv.IntRegisterType.unallocated()]
         )
         zero = riscv.GetRegisterOp(riscv.Registers.ZERO)
         branch = riscv.BeqOp(cond.results[0], zero, else_labels[0].label)

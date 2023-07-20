@@ -2,17 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    TypeVar,
-    cast,
-)
+from typing import Any, Callable, Iterable, Sequence, TypeVar, cast
 
 from xdsl.dialects.builtin import (
     AffineMapAttr,
@@ -72,23 +62,23 @@ indentNumSpaces = 2
 
 @dataclass(eq=False, repr=False)
 class Printer:
-    stream: Optional[Any] = field(default=None)
+    stream: Any | None = field(default=None)
     print_generic_format: bool = field(default=False)
     print_debuginfo: bool = field(default=False)
     diagnostic: Diagnostic = field(default_factory=Diagnostic)
 
     _indent: int = field(default=0, init=False)
-    _ssa_values: Dict[SSAValue, str] = field(default_factory=dict, init=False)
+    _ssa_values: dict[SSAValue, str] = field(default_factory=dict, init=False)
     """
     maps SSA Values to their "allocated" names
     """
-    _ssa_names: Dict[str, int] = field(default_factory=dict, init=False)
-    _block_names: Dict[Block, int] = field(default_factory=dict, init=False)
+    _ssa_names: dict[str, int] = field(default_factory=dict, init=False)
+    _block_names: dict[Block, int] = field(default_factory=dict, init=False)
     _next_valid_name_id: int = field(default=0, init=False)
     _next_valid_block_id: int = field(default=0, init=False)
     _current_line: int = field(default=0, init=False)
     _current_column: int = field(default=0, init=False)
-    _next_line_callback: List[Callable[[], None]] = field(
+    _next_line_callback: list[Callable[[], None]] = field(
         default_factory=list, init=False
     )
 
@@ -237,7 +227,7 @@ class Printer:
 
         self.print(f"%{name}")
 
-    def _print_operand(self, operand: SSAValue) -> None:
+    def print_operand(self, operand: SSAValue) -> None:
         self.print_ssa_value(operand)
 
     def print_block_name(self, block: Block) -> None:
@@ -308,7 +298,7 @@ class Printer:
         self._print_new_line()
         self.print("}")
 
-    def print_regions(self, regions: List[Region]) -> None:
+    def print_regions(self, regions: list[Region]) -> None:
         if len(regions) == 0:
             return
 
@@ -316,16 +306,16 @@ class Printer:
         self.print_list(regions, self.print_region)
         self.print(")")
 
-    def _print_operands(self, operands: Sequence[SSAValue]) -> None:
+    def print_operands(self, operands: Sequence[SSAValue]) -> None:
         if len(operands) == 0:
             self.print("()")
             return
 
         self.print("(")
-        self._print_operand(operands[0])
+        self.print_operand(operands[0])
         for operand in operands[1:]:
             self.print(", ")
-            self._print_operand(operand)
+            self.print_operand(operand)
         self.print(")")
 
     def print_paramattr_parameters(
@@ -391,26 +381,29 @@ class Printer:
             attribute = cast(AnyIntegerAttr, attribute)
 
             # boolean shorthands
-            if isinstance((typ := attribute.type), IntegerType) and typ.width.data == 1:
+            if (
+                isinstance((attr_type := attribute.type), IntegerType)
+                and attr_type.width.data == 1
+            ):
                 self.print("false" if attribute.value.data == 0 else "true")
                 return
 
             width = attribute.parameters[0]
-            typ = attribute.parameters[1]
+            attr_type = attribute.parameters[1]
             assert isinstance(width, IntAttr)
             self.print(width.data)
             self.print(" : ")
-            self.print_attribute(typ)
+            self.print_attribute(attr_type)
             return
 
         if isinstance(attribute, FloatAttr):
             value = attribute.value
-            typ = cast(
+            attr_type = cast(
                 FloatAttr[Float16Type | Float32Type | Float64Type], attribute
             ).type
             self.print(f"{value.data:.6e}")
             self.print(" : ")
-            self.print_attribute(typ)
+            self.print_attribute(attr_type)
             return
 
         # Complex types have MLIR shorthands but XDSL does not.
@@ -641,7 +634,7 @@ class Printer:
         attribute.print_parameters(self)
         return
 
-    def print_successors(self, successors: List[Block]):
+    def print_successors(self, successors: list[Block]):
         if len(successors) == 0:
             return
         self.print(" [")
@@ -655,7 +648,7 @@ class Printer:
             self.print(f'"{attr_tuple[0]}" = ')
             self.print_attribute(attr_tuple[1])
 
-    def print_op_attributes(self, attributes: Dict[str, Attribute]) -> None:
+    def print_op_attributes(self, attributes: dict[str, Attribute]) -> None:
         if len(attributes) == 0:
             return
 
@@ -667,25 +660,27 @@ class Printer:
         self.print("}")
 
     def print_op_with_default_format(self, op: Operation) -> None:
-        self._print_operands(op.operands)
+        self.print_operands(op.operands)
         self.print_successors(op.successors)
 
         self.print_regions(op.regions)
         self.print_op_attributes(op.attributes)
+        self.print(" : ")
+        self.print_operation_type(op)
 
-        # Print the operation type
-        self.print(" : (")
+    def print_operation_type(self, op: Operation) -> None:
+        self.print("(")
         self.print_list(op.operands, lambda operand: self.print_attribute(operand.type))
         self.print(") -> ")
         if len(op.results) == 0:
             self.print("()")
         elif len(op.results) == 1:
-            typ = op.results[0].type
+            res_type = op.results[0].type
             # Handle ambiguous case
-            if isinstance(typ, FunctionType):
-                self.print("(", typ, ")")
+            if isinstance(res_type, FunctionType):
+                self.print("(", res_type, ")")
             else:
-                self.print(typ)
+                self.print(res_type)
         else:
             self.print("(")
             self.print_list(

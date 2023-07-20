@@ -25,8 +25,8 @@ class HomogenizeRegisterCasts(RewritePattern):
         for operand, result in zip(op.operands, op.results):
             # look for casts with unallocated registers
             if isinstance(
-                result.type, riscv.RegisterType | riscv.FloatRegisterType
-            ) and (result.type.data.name is None):
+                result.type, riscv.IntRegisterType | riscv.FloatRegisterType
+            ) and (not result.type.is_allocated):
                 if isinstance(operand.owner, builtin.UnrealizedConversionCastOp):
                     assert isinstance(operand, OpResult)
 
