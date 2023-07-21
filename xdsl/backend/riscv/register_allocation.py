@@ -1,36 +1,33 @@
 from abc import ABC
+from itertools import chain
 from typing import Set
 
 from xdsl.dialects.builtin import ModuleOp
-from xdsl.dialects.riscv import FloatRegisterType, IntRegisterType, LabelOp, RISCVOp
+from xdsl.dialects.riscv import (
+    FloatRegisterType,
+    IntRegisterType,
+    LabelOp,
+    RISCVOp,
+    RISCVRegisterType,
+)
 from xdsl.ir import SSAValue
 
 
-def _gather_allocated(module: ModuleOp):
-    taken_regs: Set[str] = set()
+def _gather_allocated(module: ModuleOp) -> Set[str]:
+    """Utility method to gather already allocated registers"""
+
+    allocated: Set[str] = set()
 
     for op in module.walk():
         if not isinstance(op, RISCVOp):
             continue
 
-        _register_types = (IntRegisterType, FloatRegisterType)
+        for param in chain(op.operands, op.results):
+            if isinstance(param.type, RISCVRegisterType) and param.type.is_allocated:
+                if not param.type.register_name.startswith("j"):
+                    allocated.add(param.type.register_name)
 
-        for operand in op.operands:
-            if isinstance(operand.type, _register_types) and operand.type.is_allocated:
-                reg_name = operand.type.register_name
-
-                if not reg_name.startswith("j"):
-                    print(f"found {reg_name}")
-                    taken_regs.add(reg_name)
-
-        for result in op.results:
-            if isinstance(result.type, _register_types) and result.type.is_allocated:
-                reg_name = result.type.register_name
-
-                if not reg_name.startswith("j"):
-                    taken_regs.add(reg_name)
-
-    return taken_regs
+    return allocated
 
 
 class RegisterAllocator(ABC):
@@ -129,10 +126,10 @@ class RegisterAllocatorLivenessBlockNaive(RegisterAllocator):
     def allocate_registers(self, module: ModuleOp) -> None:
         should_register_allocate = False
 
-        taken = _gather_allocated(module)
+        preallocated = _gather_allocated(module)
 
         for _, reg_set in self.register_sets.items():
-            for t in taken:
+            for t in preallocated:
                 if t in reg_set:
                     reg_set.remove(t)
 
@@ -202,6 +199,13 @@ class RegisterAllocatorBlockNaive(RegisterAllocator):
         When it runs out of real registers for a block, it allocates j registers.
         """
 
+        preallocated = _gather_allocated(module)
+
+        for _, reg_set in self.register_sets.items():
+            for t in preallocated:
+                if t in reg_set:
+                    reg_set.remove(t)
+
         for region in module.regions:
             for block in region.blocks:
                 register_sets = self.register_sets.copy()
@@ -237,6 +241,7 @@ class RegisterAllocatorJRegs(RegisterAllocator):
         """
         Sets unallocated registers to an infinite set of `j` registers
         """
+
         for op in module.walk():
             # Do not allocate registers on non-RISCV-ops
             if not isinstance(op, RISCVOp):
