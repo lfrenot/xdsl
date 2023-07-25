@@ -14,10 +14,16 @@ from xdsl.pattern_rewriter import (
     op_type_rewrite_pattern,
 )
 
+_cached_pre_blocks: dict[Block, List[riscv.LabelOp]] = {}
+_cached_jumps: dict[Block, List[riscv.JOp]] = {}
+
 
 def label_block(
     block: Block, rewriter: PatternRewriter, at_start: bool = True, at_end: bool = False
 ) -> List[riscv.LabelOp]:
+    if block in _cached_pre_blocks:
+        return _cached_pre_blocks[block]
+
     labels: List[riscv.LabelOp] = []
 
     if at_start and isinstance(block.ops.first, riscv.LabelOp):
@@ -30,9 +36,10 @@ def label_block(
 
     if (at_start or at_end) and (parent_region := block.parent):
         block_idx = parent_region.get_block_index(block)
+        block_hash = hash(block)
 
         if at_start:
-            label_start = "bb" + str(block_idx)
+            label_start = "bb" + str(block_hash)
             label_op = riscv.LabelOp(label_start)
             label_block = Block([label_op, riscv.TermOp()])
             parent_region.insert_block(label_block, block_idx)
@@ -40,21 +47,27 @@ def label_block(
             labels.append(label_op)
 
         if at_end:
-            label_end = "bb" + str(block_idx) + "e"
+            label_end = "bb" + str(block_hash) + "e"
             label_op = riscv.LabelOp(label_end)
             label_block = Block([label_op, riscv.TermOp()])
             parent_region.insert_block(label_block, block_idx + 1)
 
             labels.append(label_op)
 
+    _cached_pre_blocks[block] = labels
+
     return labels
 
 
 def add_jump(block: Block, label: riscv.LabelOp) -> None:
+    if block in _cached_jumps:
+        return None
+
     if parent_region := block.parent:
         block_idx = parent_region.get_block_index(block)
         jmp = riscv.JOp(label.label)
         parent_region.insert_block(Block([jmp]), block_idx + 1)
+        _cached_jumps[block] = [jmp]
 
     return None
 
@@ -103,11 +116,29 @@ class LowerBlockArgs(RewritePattern):
                         use.operation.results[0].type,
                         riscv.IntRegisterType | riscv.FloatRegisterType,
                     ):
-                        for res in use.operation.results:
+                        for res in list(use.operation.results):
                             res.replace_by(register.res)
+
                         rewriter.erase_op(use.operation)
                     else:
-                        use.operation.replace_operand(use.index, register.res)
+                        use.operation.operands[use.index] = register.res
+                        if isinstance(
+                            use.operation, builtin.UnrealizedConversionCastOp
+                        ):
+                            for res in list(use.operation.results):
+                                for other_use in res.uses:
+                                    if isinstance(
+                                        other_use.operation,
+                                        builtin.UnrealizedConversionCastOp,
+                                    ) and isinstance(
+                                        other_use.operation.results[
+                                            other_use.index
+                                        ].type,
+                                        riscv.IntRegisterType | riscv.FloatRegisterType,
+                                    ):
+                                        other_use.operation.results[
+                                            other_use.index
+                                        ].type = register.res.type
 
                 rewriter.erase_block_argument(arg)
                 rewriter.insert_op_at_start(register, block)
@@ -168,6 +199,9 @@ class CfToRISCV(ModulePass):
 
     # lower to func.call
     def apply(self, ctx: MLContext, op: ModuleOp) -> None:
+        _cached_pre_blocks.clear()
+        _cached_jumps.clear()
+
         PatternRewriteWalker(
             GreedyRewritePatternApplier(
                 [LowerConditionalBranchToRISCV(), LowerUnconditionalBranchToRISCV()]
