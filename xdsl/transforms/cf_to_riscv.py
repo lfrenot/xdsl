@@ -1,9 +1,10 @@
 from abc import ABC
 from typing import List
 
-from xdsl.dialects import cf, riscv, riscv_func
-from xdsl.dialects.builtin import ModuleOp, UnrealizedConversionCastOp
+from xdsl.dialects import builtin, cf, riscv, riscv_func
+from xdsl.dialects.builtin import AnyFloat, ModuleOp, UnrealizedConversionCastOp
 from xdsl.ir import Block, MLContext, Operation
+from xdsl.ir.core import Region
 from xdsl.passes import ModulePass
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
@@ -12,6 +13,7 @@ from xdsl.pattern_rewriter import (
     RewritePattern,
     op_type_rewrite_pattern,
 )
+from xdsl.rewriter import Rewriter
 
 
 def label_block(
@@ -65,9 +67,29 @@ class LowerBlockArgs(RewritePattern):
     ) -> None:
         for block in op.func_body.blocks:
             for i, arg in enumerate(block.args):
-                reg_idx = op.func_body.get_block_index(block) * 100 + i
-                rarg = riscv.GetRegisterOp(riscv.IntRegisterType(f"jba{reg_idx}"))
-                arg.replace_by(rarg.res)
+                reg_idx = hash(block) + i
+
+                if isinstance(arg.type, AnyFloat):
+                    rarg = riscv.GetFloatRegisterOp(
+                        riscv.FloatRegisterType(f"jba{reg_idx}")
+                    )
+                else:
+                    rarg = riscv.GetRegisterOp(riscv.IntRegisterType(f"jba{reg_idx}"))
+                # arg.replace_by(rarg.res)
+
+                for use in set(arg.uses):
+                    if isinstance(
+                        use.operation, builtin.UnrealizedConversionCastOp
+                    ) and isinstance(
+                        use.operation.results[0].type,
+                        riscv.IntRegisterType | riscv.FloatRegisterType,
+                    ):
+                        for res in use.operation.results:
+                            res.replace_by(rarg.res)
+                        rewriter.erase_op(use.operation)
+                    else:
+                        use.operation.replace_operand(use.index, rarg.res)
+
                 rewriter.erase_block_argument(arg)
                 rewriter.insert_op_at_start(rarg, block)
 
@@ -81,28 +103,62 @@ class LowerConditionalBranchToRISCV(RewritePattern, ABC):
         else_labels = label_block(op.else_block, rewriter, True, True)
         add_jump(op.then_block, else_labels[1])
 
-        then_idx = 0
-        else_idx = 0
-        if parent := op.then_block.parent:
-            then_idx = parent.get_block_index(op.then_block)
-        if parent := op.else_block.parent:
-            else_idx = parent.get_block_index(op.else_block)
-
         to_replace: List[Operation] = []
 
         for i, arg in enumerate(op.then_arguments):
-            reg_idx = then_idx * 100 + i
-            cast = UnrealizedConversionCastOp.get(
-                [arg], [riscv.IntRegisterType(f"jba{reg_idx}")]
+            reg_idx = hash(op.then_block) + i
+
+            new_block_arg = (
+                riscv.FloatRegisterType(f"jba{reg_idx}")
+                if isinstance(arg.type, AnyFloat)
+                else riscv.IntRegisterType(f"jba{reg_idx}")
             )
-            to_replace.append(cast)
+            if isinstance(arg.type, AnyFloat):
+                new_block_arg = riscv.FloatRegisterType(f"jba{reg_idx}")
+                cast = [
+                    r := UnrealizedConversionCastOp.get(
+                        [arg], (riscv.FloatRegisterType.unallocated(),)
+                    ),
+                    n := riscv.FCvtWSOp(r.results[0]),
+                    riscv.FMvWXOp(n.results[0], rd=new_block_arg),
+                ]
+            else:
+                new_block_arg = riscv.IntRegisterType(f"jba{reg_idx}")
+                cast = [
+                    r := UnrealizedConversionCastOp.get(
+                        [arg], (riscv.IntRegisterType.unallocated(),)
+                    ),
+                    riscv.MVOp(r.results[0], rd=new_block_arg),
+                ]
+
+            rewriter.insert_op_before_matched_op(cast)
+
+            for c in cast:
+                to_replace.append(c)
 
         for i, arg in enumerate(op.else_arguments):
-            reg_idx = else_idx * 100 + i
-            cast = UnrealizedConversionCastOp.get(
-                [arg], [riscv.IntRegisterType(f"jba{reg_idx}")]
-            )
-            to_replace.append(cast)
+            reg_idx = hash(op.else_block) + i
+            if isinstance(arg.type, AnyFloat):
+                new_block_arg = riscv.FloatRegisterType(f"jba{reg_idx}")
+                cast = [
+                    r := UnrealizedConversionCastOp.get(
+                        [arg], (riscv.FloatRegisterType.unallocated(),)
+                    ),
+                    n := riscv.FCvtWSOp(r.results[0]),
+                    riscv.FMvWXOp(n.results[0], rd=new_block_arg),
+                ]
+            else:
+                new_block_arg = riscv.IntRegisterType(f"jba{reg_idx}")
+                cast = [
+                    r := UnrealizedConversionCastOp.get(
+                        [arg], (riscv.IntRegisterType.unallocated(),)
+                    ),
+                    riscv.MVOp(r.results[0], rd=new_block_arg),
+                ]
+
+            rewriter.insert_op_before_matched_op(cast)
+            for c in cast:
+                to_replace.append(c)
 
         cond = UnrealizedConversionCastOp.get(
             [op.cond], [riscv.IntRegisterType.unallocated()]
@@ -117,6 +173,39 @@ class LowerConditionalBranchToRISCV(RewritePattern, ABC):
         rewriter.replace_matched_op(to_replace)
 
 
+class LowerUnconditionalBranchToRISCV(RewritePattern, ABC):
+    @op_type_rewrite_pattern
+    def match_and_rewrite(self, op: cf.Branch, rewriter: PatternRewriter, /):
+        succ_label = label_block(op.successor, rewriter, True, False)
+
+        for i, arg in enumerate(op.arguments):
+            assert isinstance(op.successor.parent, Region)
+            reg_idx = hash(op.successor) + i
+            print(f"{op.successor.parent} {reg_idx} {arg.type}")
+
+            if isinstance(arg.type, AnyFloat):
+                new_block_arg = riscv.FloatRegisterType(f"jba{reg_idx}")
+                cast = [
+                    r := UnrealizedConversionCastOp.get(
+                        [arg], (riscv.FloatRegisterType.unallocated(),)
+                    ),
+                    n := riscv.FCvtWSOp(r.results[0]),
+                    riscv.FMvWXOp(n.results[0], rd=new_block_arg),
+                ]
+            else:
+                new_block_arg = riscv.IntRegisterType(f"jba{reg_idx}")
+                cast = [
+                    r := UnrealizedConversionCastOp.get(
+                        [arg], (riscv.IntRegisterType.unallocated(),)
+                    ),
+                    riscv.MVOp(r.results[0], rd=new_block_arg),
+                ]
+
+            rewriter.insert_op_before_matched_op(cast)
+
+        rewriter.replace_matched_op(riscv.JOp(succ_label[0].label))
+
+
 class CfToRISCV(ModulePass):
     """ """
 
@@ -125,6 +214,8 @@ class CfToRISCV(ModulePass):
     # lower to func.call
     def apply(self, ctx: MLContext, op: ModuleOp) -> None:
         PatternRewriteWalker(
-            GreedyRewritePatternApplier([LowerConditionalBranchToRISCV()])
+            GreedyRewritePatternApplier(
+                [LowerConditionalBranchToRISCV(), LowerUnconditionalBranchToRISCV()]
+            )
         ).rewrite_module(op)
         PatternRewriteWalker(LowerBlockArgs()).rewrite_module(op)

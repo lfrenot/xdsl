@@ -25,6 +25,10 @@ def cast_values_to_registers(
     return results
 
 
+def cast_value_to_register(operand: SSAValue, rewriter: PatternRewriter) -> OpResult:
+    return cast_values_to_registers([operand], rewriter)[0]
+
+
 def get_type_size(t: Attribute) -> int:
     if isinstance(t, builtin.Float32Type):
         return 4

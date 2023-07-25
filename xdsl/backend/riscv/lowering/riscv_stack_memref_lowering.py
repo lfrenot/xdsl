@@ -43,9 +43,9 @@ class LowerMemrefAlloca(RewritePattern):
         rewriter.replace_matched_op(
             [
                 sp := riscv.GetRegisterOp(riscv.Registers.SP),
-                stack_alloc := riscv.MVOp(sp),
-                riscv.AddiOp(stack_alloc, -total_size, rd=riscv.Registers.SP),
-                UnrealizedConversionCastOp.get(stack_alloc.results, (reference_type,)),
+                t := riscv.AddiOp(sp, -total_size),
+                riscv.MVOp(t, rd=riscv.Registers.SP),
+                UnrealizedConversionCastOp.get(t.results, (reference_type,)),
             ]
         )
 
