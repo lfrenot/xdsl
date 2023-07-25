@@ -4,7 +4,7 @@ from typing import List
 from xdsl.dialects import builtin, cf, riscv, riscv_func
 from xdsl.dialects.builtin import AnyFloat, ModuleOp, UnrealizedConversionCastOp
 from xdsl.ir import Block, MLContext, Operation
-from xdsl.ir.core import Region
+from xdsl.irdl import Operand
 from xdsl.passes import ModulePass
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
@@ -13,7 +13,6 @@ from xdsl.pattern_rewriter import (
     RewritePattern,
     op_type_rewrite_pattern,
 )
-from xdsl.rewriter import Rewriter
 
 
 def label_block(
@@ -60,6 +59,26 @@ def add_jump(block: Block, label: riscv.LabelOp) -> None:
     return None
 
 
+def generate_move_argument(arg: Operand, reg_idx: int) -> List[Operation]:
+    if isinstance(arg.type, AnyFloat):
+        new_block_arg = riscv.FloatRegisterType(f"jba{reg_idx}")
+        return [
+            reg := UnrealizedConversionCastOp.get(
+                [arg], (riscv.FloatRegisterType.unallocated(),)
+            ),
+            convert_to_int := riscv.FCvtWSOp(reg.results[0]),
+            riscv.FMvWXOp(convert_to_int.results[0], rd=new_block_arg),
+        ]
+    else:
+        new_block_arg = riscv.IntRegisterType(f"jba{reg_idx}")
+        return [
+            reg := UnrealizedConversionCastOp.get(
+                [arg], (riscv.IntRegisterType.unallocated(),)
+            ),
+            riscv.MVOp(reg.results[0], rd=new_block_arg),
+        ]
+
+
 class LowerBlockArgs(RewritePattern):
     @op_type_rewrite_pattern
     def match_and_rewrite(
@@ -69,15 +88,15 @@ class LowerBlockArgs(RewritePattern):
             for i, arg in enumerate(block.args):
                 reg_idx = hash(block) + i
 
-                if isinstance(arg.type, AnyFloat):
-                    rarg = riscv.GetFloatRegisterOp(
-                        riscv.FloatRegisterType(f"jba{reg_idx}")
-                    )
-                else:
-                    rarg = riscv.GetRegisterOp(riscv.IntRegisterType(f"jba{reg_idx}"))
-                # arg.replace_by(rarg.res)
+                register = (
+                    riscv.GetFloatRegisterOp(riscv.FloatRegisterType(f"jba{reg_idx}"))
+                    if isinstance(arg.type, AnyFloat)
+                    else riscv.GetRegisterOp(riscv.IntRegisterType(f"jba{reg_idx}"))
+                )
 
                 for use in set(arg.uses):
+                    # this cast will not be able to resolved, so replace all its uses with the register
+                    # directly
                     if isinstance(
                         use.operation, builtin.UnrealizedConversionCastOp
                     ) and isinstance(
@@ -85,13 +104,13 @@ class LowerBlockArgs(RewritePattern):
                         riscv.IntRegisterType | riscv.FloatRegisterType,
                     ):
                         for res in use.operation.results:
-                            res.replace_by(rarg.res)
+                            res.replace_by(register.res)
                         rewriter.erase_op(use.operation)
                     else:
-                        use.operation.replace_operand(use.index, rarg.res)
+                        use.operation.replace_operand(use.index, register.res)
 
                 rewriter.erase_block_argument(arg)
-                rewriter.insert_op_at_start(rarg, block)
+                rewriter.insert_op_at_start(register, block)
 
 
 class LowerConditionalBranchToRISCV(RewritePattern, ABC):
@@ -107,58 +126,15 @@ class LowerConditionalBranchToRISCV(RewritePattern, ABC):
 
         for i, arg in enumerate(op.then_arguments):
             reg_idx = hash(op.then_block) + i
-
-            new_block_arg = (
-                riscv.FloatRegisterType(f"jba{reg_idx}")
-                if isinstance(arg.type, AnyFloat)
-                else riscv.IntRegisterType(f"jba{reg_idx}")
-            )
-            if isinstance(arg.type, AnyFloat):
-                new_block_arg = riscv.FloatRegisterType(f"jba{reg_idx}")
-                cast = [
-                    r := UnrealizedConversionCastOp.get(
-                        [arg], (riscv.FloatRegisterType.unallocated(),)
-                    ),
-                    n := riscv.FCvtWSOp(r.results[0]),
-                    riscv.FMvWXOp(n.results[0], rd=new_block_arg),
-                ]
-            else:
-                new_block_arg = riscv.IntRegisterType(f"jba{reg_idx}")
-                cast = [
-                    r := UnrealizedConversionCastOp.get(
-                        [arg], (riscv.IntRegisterType.unallocated(),)
-                    ),
-                    riscv.MVOp(r.results[0], rd=new_block_arg),
-                ]
-
-            rewriter.insert_op_before_matched_op(cast)
-
-            for c in cast:
-                to_replace.append(c)
+            ops = generate_move_argument(arg, reg_idx)
+            rewriter.insert_op_before_matched_op(ops)
+            to_replace.extend(ops)
 
         for i, arg in enumerate(op.else_arguments):
             reg_idx = hash(op.else_block) + i
-            if isinstance(arg.type, AnyFloat):
-                new_block_arg = riscv.FloatRegisterType(f"jba{reg_idx}")
-                cast = [
-                    r := UnrealizedConversionCastOp.get(
-                        [arg], (riscv.FloatRegisterType.unallocated(),)
-                    ),
-                    n := riscv.FCvtWSOp(r.results[0]),
-                    riscv.FMvWXOp(n.results[0], rd=new_block_arg),
-                ]
-            else:
-                new_block_arg = riscv.IntRegisterType(f"jba{reg_idx}")
-                cast = [
-                    r := UnrealizedConversionCastOp.get(
-                        [arg], (riscv.IntRegisterType.unallocated(),)
-                    ),
-                    riscv.MVOp(r.results[0], rd=new_block_arg),
-                ]
-
-            rewriter.insert_op_before_matched_op(cast)
-            for c in cast:
-                to_replace.append(c)
+            ops = generate_move_argument(arg, reg_idx)
+            rewriter.insert_op_before_matched_op(ops)
+            to_replace.extend(ops)
 
         cond = UnrealizedConversionCastOp.get(
             [op.cond], [riscv.IntRegisterType.unallocated()]
@@ -179,29 +155,8 @@ class LowerUnconditionalBranchToRISCV(RewritePattern, ABC):
         succ_label = label_block(op.successor, rewriter, True, False)
 
         for i, arg in enumerate(op.arguments):
-            assert isinstance(op.successor.parent, Region)
             reg_idx = hash(op.successor) + i
-            print(f"{op.successor.parent} {reg_idx} {arg.type}")
-
-            if isinstance(arg.type, AnyFloat):
-                new_block_arg = riscv.FloatRegisterType(f"jba{reg_idx}")
-                cast = [
-                    r := UnrealizedConversionCastOp.get(
-                        [arg], (riscv.FloatRegisterType.unallocated(),)
-                    ),
-                    n := riscv.FCvtWSOp(r.results[0]),
-                    riscv.FMvWXOp(n.results[0], rd=new_block_arg),
-                ]
-            else:
-                new_block_arg = riscv.IntRegisterType(f"jba{reg_idx}")
-                cast = [
-                    r := UnrealizedConversionCastOp.get(
-                        [arg], (riscv.IntRegisterType.unallocated(),)
-                    ),
-                    riscv.MVOp(r.results[0], rd=new_block_arg),
-                ]
-
-            rewriter.insert_op_before_matched_op(cast)
+            rewriter.insert_op_before_matched_op(generate_move_argument(arg, reg_idx))
 
         rewriter.replace_matched_op(riscv.JOp(succ_label[0].label))
 
