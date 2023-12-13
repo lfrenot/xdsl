@@ -33,8 +33,8 @@
     border-title-color: $error-darken-3;
     border-title-style: bold;
     border-title-align: center;
-    width: 30;
-    height: 3;
+    width: auto;
+    height: auto;
 }
 
 # Horizontal(Button, Button, Label)
@@ -57,14 +57,15 @@
     border-title-color: $error-darken-3;
     border-title-style: bold;
     border-title-align: center;
-    width: 30;
-    height: 3;
+    width: auto;
+    height: auto;
+
 }
 
 # Horizontal(Button, Label)
 #output_horizontal{
     width: auto;
-    height: 3;
+    height: auto;
 }
 
 # Vertical(TextArea, Horizontal(Button, Label))

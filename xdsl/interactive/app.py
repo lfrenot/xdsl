@@ -29,6 +29,7 @@ from textual.widgets import (
 from xdsl.dialects import builtin
 from xdsl.dialects.builtin import ModuleOp
 from xdsl.interactive.load_file_screen import LoadFile
+from xdsl.interactive.pass_metrics import count_number_of_operations
 from xdsl.ir import MLContext
 from xdsl.parser import Parser
 from xdsl.passes import ModulePass, PipelinePass
@@ -128,8 +129,8 @@ class InputApp(App[None]):
         self.output_text_area = OutputTextArea(id="output")
         self.passes_list_view = ListView(id="passes_list_view")
         self.selected_query_label = Label("", id="selected_passes_label")
-        self.input_number_of_ops = Label("", id="input_number_of_ops")
-        self.output_number_of_ops = Label("", id="output_number_of_ops")
+        self.input_number_of_ops = Label("-", id="input_number_of_ops")
+        self.output_number_of_ops = Label("-", id="output_number_of_ops")
 
         super().__init__()
 
@@ -249,6 +250,7 @@ class InputApp(App[None]):
         if (input_text) == "":
             self.current_module = None
             self.current_condensed_pass_list = ()
+            self.input_number_of_ops.update("-")
             return
         try:
             ctx = MLContext(True)
@@ -256,11 +258,15 @@ class InputApp(App[None]):
                 ctx.load_dialect(dialect)
             parser = Parser(ctx, input_text)
             module = parser.parse_module()
+            input_number_of_ops = str(count_number_of_operations(module))
             pipeline = PipelinePass([p() for p in self.pass_pipeline])
             pipeline.apply(ctx, module)
             self.current_module = module
         except Exception as e:
             self.current_module = e
+            input_number_of_ops = "-"
+
+        self.input_number_of_ops.update(input_number_of_ops)
 
     def watch_current_module(self):
         """
@@ -270,16 +276,22 @@ class InputApp(App[None]):
         match self.current_module:
             case None:
                 output_text = "No input"
+                output_number_of_ops = "-"
             case Exception() as e:
                 output_stream = StringIO()
                 Printer(output_stream).print(e)
                 output_text = output_stream.getvalue()
+                output_number_of_ops = "-"
             case ModuleOp():
                 output_stream = StringIO()
                 Printer(output_stream).print(self.current_module)
                 output_text = output_stream.getvalue()
+                output_number_of_ops = str(
+                    count_number_of_operations(self.current_module)
+                )
 
         self.output_text_area.load_text(output_text)
+        self.output_number_of_ops.update(output_number_of_ops)
 
     def get_query_string(self) -> str:
         """
