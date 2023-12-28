@@ -563,17 +563,18 @@ class ApplyOpToHLS(RewritePattern):
         i = 0
         apply_clone: ApplyOp = apply_clones_lst[-1]
         for _operand in apply_clone.operands:
-            assert isinstance(_operand, BlockArgument) or isinstance(_operand, OpResult)
-            if isinstance(_operand, OpResult) and isinstance(_operand.op, HLSStream):
-                assert isinstance(_operand.op.attributes["inout"], IntAttr)
+            if isinstance(_operand.owner, Operation) and isinstance(
+                _operand.owner, HLSStream
+            ):
+                assert isinstance(_operand.owner.attributes["inout"], IntAttr)
                 if (
-                    "stencil" in _operand.op.attributes
-                    and _operand.op.attributes["inout"].data is IN
+                    "stencil" in _operand.owner.attributes
+                    and _operand.owner.attributes["inout"].data is IN
                 ):
                     indices_stream_to_read.append(i)
                 if (
-                    "data" in _operand.op.attributes
-                    and _operand.op.attributes["inout"].data is OUT
+                    "data" in _operand.owner.attributes
+                    and _operand.owner.attributes["inout"].data is OUT
                 ):
                     indices_stream_to_write.append(i)
             i += 1
@@ -596,7 +597,7 @@ class ApplyOpToHLS(RewritePattern):
         k = 0
         new_apply: ApplyOp
         for component in return_op.arg:
-            assert isinstance(component, OpResult)
+            assert isa(component, OpResult)
             new_apply: ApplyOp = apply_clones_lst[k]
             k += 1
 
@@ -692,8 +693,8 @@ def collectComponentOperations(
     parent_op = op.owner
 
     for operand in parent_op.operands:
-        if not isinstance(operand, BlockArgument):
-            assert isinstance(operand, OpResult)
+        if not isa(operand, BlockArgument):
+            assert isa(operand, OpResult)
             block_index = typing.cast(
                 Block, operand.op.parent_block()
             ).get_operation_index(operand.op)
@@ -823,7 +824,7 @@ class StencilAccessOpToReadBlockOp(RewritePattern):
             ):
                 hls_read = use.operation
 
-                assert isinstance(hls_read.results[0], OpResult)
+                assert isa(hls_read.results[0], OpResult)
                 result_hls_read = hls_read.results[0]
                 replace_access = True
 
@@ -837,7 +838,7 @@ class StencilAccessOpToReadBlockOp(RewritePattern):
                 i64, [0] + access_idx
             )
 
-            assert isinstance(result_hls_read, OpResult)
+            assert isa(result_hls_read, OpResult)
             stencil_value = HLSExtractStencilValue(
                 access_idx_array, result_hls_read, f64
             )
@@ -912,7 +913,7 @@ class GetInoutAttributeFromExternalStore(RewritePattern):
 def get_number_input_stencils(op: FuncOp):
     # ndims = len(field.typ.get_shape())
     def dim(o: ExternalLoadOp):
-        assert isinstance(o.field, OpResult)
+        assert isa(o.field, OpResult)
         op_field_type = o.field.type
         assert isinstance(op_field_type, memref.MemRefType)
         return len(op_field_type.get_shape())
@@ -1060,7 +1061,7 @@ class PackData(RewritePattern):
                 if isinstance(use.operation, InsertValueOp):
                     insertvalue = use.operation
 
-                    assert isinstance(insertvalue.container, OpResult)
+                    assert isa(insertvalue.container, OpResult)
                     container_op = insertvalue.container.op
                     if isinstance(container_op, UndefOp):
                         # We mark the UndefOp to update its type in the next pass and also update the type returned by the insertvalue
@@ -1124,7 +1125,7 @@ class GetRepeatedCoefficients(RewritePattern):
 
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: memref.Subview, rewriter: PatternRewriter, /):
-        assert isinstance(op.source, OpResult)
+        assert isa(op.source, OpResult)
         assert isinstance(op.source.op, memref.Cast)
         cast = op.source.op  # original memref
         cast_dest_type = cast.dest.type

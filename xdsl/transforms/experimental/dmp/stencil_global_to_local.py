@@ -537,9 +537,6 @@ def can_loop_invariant_code_move(op: Operation):
     """
 
     for arg in op.operands:
-        if not isinstance(arg, OpResult):
-            print(f"{arg} is not opresult")
-            return False
         if not isinstance(arg.owner, _LOOP_INVARIANT_OPS):
             print(f"{arg} is not loop invariant")
             return False
@@ -554,7 +551,7 @@ def collect_args_recursive(op: Operation) -> Iterable[Operation]:
     Check with can_loop_invariant_code_move prior to using this!
     """
     for arg in op.operands:
-        assert isinstance(arg, OpResult)
+        assert isa(arg, OpResult)
         yield from collect_args_recursive(arg.owner)
     yield op
 

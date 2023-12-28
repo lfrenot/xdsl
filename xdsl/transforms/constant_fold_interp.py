@@ -32,7 +32,8 @@ class ConstantFoldInterpPattern(RewritePattern):
             return
 
         if not all(
-            isinstance(operand, OpResult) and operand.op.has_trait(ConstantLike)
+            isinstance(operand.owner, Operation)
+            and operand.owner.has_trait(ConstantLike)
             for operand in op.operands
         ):
             # Only rewrite operations where all the operands are constants

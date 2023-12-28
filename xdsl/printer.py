@@ -58,6 +58,7 @@ from xdsl.ir import (
     Region,
     SSAValue,
     TypeAttribute,
+    TypedSSAValue,
 )
 from xdsl.traits import IsTerminator
 from xdsl.utils.diagnostic import Diagnostic
@@ -100,7 +101,8 @@ class Printer:
             if isinstance(arg, str):
                 self.print_string(arg)
                 continue
-            if isinstance(arg, SSAValue):
+            if isinstance(arg, TypedSSAValue):
+                arg = cast(SSAValue, arg)
                 self.print_ssa_value(arg)
                 continue
             if isinstance(arg, Attribute):

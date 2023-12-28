@@ -7,7 +7,7 @@ from typing import IO, Any, ClassVar
 from xdsl.dialects import pdl
 from xdsl.dialects.builtin import IntegerAttr, IntegerType, ModuleOp
 from xdsl.interpreter import Interpreter, InterpreterFunctions, impl, register_impls
-from xdsl.ir import Attribute, MLContext, Operation, OpResult, SSAValue, TypeAttribute
+from xdsl.ir import Attribute, MLContext, Operation, SSAValue, TypeAttribute
 from xdsl.irdl import IRDLOperation
 from xdsl.pattern_rewriter import PatternRewriter, RewritePattern
 from xdsl.utils.exceptions import InterpretationError
@@ -63,11 +63,10 @@ class PDLMatcher:
             return True
 
         if pdl_op.value_type is not None:
-            assert isinstance(pdl_op.value_type, OpResult)
-            assert isinstance(pdl_op.value_type.op, pdl.TypeOp)
+            assert isinstance(pdl_op.value_type.owner, pdl.TypeOp)
 
             if not self.match_type(
-                pdl_op.value_type, pdl_op.value_type.op, xdsl_val.type
+                pdl_op.value_type, pdl_op.value_type.owner, xdsl_val.type
             ):
                 return False
 
@@ -82,18 +81,19 @@ class PDLMatcher:
             return self.matching_context[ssa_val] == xdsl_operand
 
         root_pdl_op_value = pdl_op.parent_
-        assert isinstance(root_pdl_op_value, OpResult)
-        assert isinstance(root_pdl_op_value.op, pdl.OperationOp)
+        assert isinstance(root_pdl_op_value.owner, pdl.OperationOp)
 
-        if not isinstance(xdsl_operand, OpResult):
+        if not isinstance(xdsl_operand.owner, Operation):
             return False
 
-        xdsl_op = xdsl_operand.op
+        xdsl_op = xdsl_operand.owner
 
-        if not self.match_operation(root_pdl_op_value, root_pdl_op_value.op, xdsl_op):
+        if not self.match_operation(
+            root_pdl_op_value, root_pdl_op_value.owner, xdsl_op
+        ):
             return False
 
-        original_op = root_pdl_op_value.op
+        original_op = root_pdl_op_value.owner
 
         index = pdl_op.index.value.data
 
@@ -127,15 +127,14 @@ class PDLMatcher:
                 return False
 
         if pdl_op.value_type is not None:
-            assert isinstance(pdl_op.value_type, OpResult)
-            assert isinstance(pdl_op.value_type.op, pdl.TypeOp)
+            assert isinstance(pdl_op.value_type.owner, pdl.TypeOp)
 
             assert isa(
                 xdsl_attr, IntegerAttr[IntegerType]
             ), "Only handle integer types for now"
 
             if not self.match_type(
-                pdl_op.value_type, pdl_op.value_type.op, xdsl_attr.type
+                pdl_op.value_type, pdl_op.value_type.owner, xdsl_attr.type
             ):
                 return False
 
@@ -156,12 +155,11 @@ class PDLMatcher:
         attribute_value_names = [avn.data for avn in pdl_op.attributeValueNames.data]
 
         for avn, av in zip(attribute_value_names, pdl_op.attribute_values):
-            assert isinstance(av, OpResult)
-            assert isinstance(av.op, pdl.AttributeOp)
+            assert isinstance(av.owner, pdl.AttributeOp)
             if (attr := xdsl_op.get_attr_or_prop(avn)) is None:
                 return False
 
-            if not self.match_attribute(av, av.op, avn, attr):
+            if not self.match_attribute(av, av.owner, avn, attr):
                 return False
 
         pdl_operands = pdl_op.operand_values
@@ -171,16 +169,17 @@ class PDLMatcher:
             return False
 
         for pdl_operand, xdsl_operand in zip(pdl_operands, xdsl_operands):
-            assert isinstance(pdl_operand, OpResult)
-            assert isinstance(pdl_operand.op, pdl.OperandOp | pdl.ResultOp)
-            match pdl_operand.op:
+            assert isinstance(pdl_operand.owner, pdl.OperandOp | pdl.ResultOp)
+            match pdl_operand.owner:
                 case pdl.OperandOp():
                     if not self.match_operand(
-                        pdl_operand, pdl_operand.op, xdsl_operand
+                        pdl_operand, pdl_operand.owner, xdsl_operand
                     ):
                         return False
                 case pdl.ResultOp():
-                    if not self.match_result(pdl_operand, pdl_operand.op, xdsl_operand):
+                    if not self.match_result(
+                        pdl_operand, pdl_operand.owner, xdsl_operand
+                    ):
                         return False
 
         pdl_results = pdl_op.type_values
@@ -190,9 +189,8 @@ class PDLMatcher:
             return False
 
         for pdl_result, xdsl_result in zip(pdl_results, xdsl_results):
-            assert isinstance(pdl_result, OpResult)
-            assert isinstance(pdl_result.op, pdl.TypeOp)
-            if not self.match_type(pdl_result, pdl_result.op, xdsl_result.type):
+            assert isinstance(pdl_result.owner, pdl.TypeOp)
+            if not self.match_type(pdl_result, pdl_result.owner, xdsl_result.type):
                 return False
 
         self.matching_context[ssa_val] = xdsl_op
@@ -234,8 +232,8 @@ class PDLRewritePattern(RewritePattern):
             self.pdl_rewrite_op.body is not None
         ), "TODO: handle None body op in pdl.RewriteOp"
 
-        assert isinstance(pdl_op_val, OpResult)
-        pdl_op = pdl_op_val.op
+        assert isinstance(pdl_op_val.owner, Operation)
+        pdl_op = pdl_op_val.owner
 
         assert isinstance(pdl_op, pdl.OperationOp)
         matcher = PDLMatcher()
@@ -300,7 +298,7 @@ class PDLRewriteFunctions(InterpreterFunctions):
 
         operand_values = interpreter.get_values(op.operand_values)
         for operand in operand_values:
-            assert isinstance(operand, SSAValue)
+            assert isa(operand, SSAValue)
 
         attribute_values = interpreter.get_values(op.attribute_values)
 

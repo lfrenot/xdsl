@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
 from xdsl.ir import Block, BlockArgument, Operation, Region, SSAValue
+from xdsl.utils.hints import isa
 
 
 class Rewriter:
@@ -73,10 +74,7 @@ class Rewriter:
             raise Exception("Cannot inline a block in a child block.")
         for op in inlined_block.ops:
             for operand in op.operands:
-                if (
-                    isinstance(operand, BlockArgument)
-                    and operand.block is extended_block
-                ):
+                if isa(operand, BlockArgument) and operand.block is extended_block:
                     raise Exception(
                         "Cannot inline block which has operations using "
                         "the block arguments."

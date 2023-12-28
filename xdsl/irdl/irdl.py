@@ -47,6 +47,7 @@ from xdsl.utils.hints import (
     PropertyType,
     get_type_var_from_generic_class,
     get_type_var_mapping,
+    isa,
 )
 
 if TYPE_CHECKING:
@@ -1764,11 +1765,12 @@ def irdl_build_operations_arg(
 ) -> SSAValue | list[SSAValue]:
     if operand is None:
         return []
-    elif isinstance(operand, SSAValue):
+    elif isa(operand, SSAValue):
         return operand
     elif isinstance(operand, Operation):
         return SSAValue.get(operand)
     else:
+        assert isinstance(operand, Sequence)
         return [SSAValue.get(op) for op in operand]
 
 

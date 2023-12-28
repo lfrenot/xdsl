@@ -1,6 +1,6 @@
 from xdsl.dialects import arith, builtin, func, llvm, mpi
 from xdsl.dialects.builtin import i32, i64
-from xdsl.ir import Attribute, Operation, OpResult
+from xdsl.ir import Attribute, Operation
 from xdsl.irdl import (
     IRDLOperation,
     Operand,
@@ -100,8 +100,7 @@ def test_lower_mpi_wait_with_status():
     assert call is not None
     assert call.callee.string_value() == "MPI_Wait"
     assert len(call.arguments) == 2
-    assert isinstance(call.arguments[1], OpResult)
-    assert isinstance(call.arguments[1].op, llvm.AllocaOp)
+    assert isinstance(call.arguments[1].owner, llvm.AllocaOp)
 
 
 def test_lower_mpi_comm_rank():

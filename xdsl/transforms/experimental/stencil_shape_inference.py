@@ -13,7 +13,7 @@ from xdsl.dialects.stencil import (
     StoreOp,
     TempType,
 )
-from xdsl.ir import Attribute, BlockArgument, MLContext, Operation, SSAValue
+from xdsl.ir import Attribute, Block, MLContext, Operation, SSAValue
 from xdsl.passes import ModulePass
 from xdsl.pattern_rewriter import (
     GreedyRewritePatternApplier,
@@ -95,8 +95,8 @@ class AccessOpShapeInference(RewritePattern):
         apply = op.parent_op()
         assert isinstance(apply, ApplyOp)
         assert isa(op.temp.type, TempType[Attribute])
-        assert isinstance(op.temp, BlockArgument)
-        assert op.temp.block.parent_op() is apply
+        assert isinstance(op.temp.owner, Block)
+        assert op.temp.owner.parent_op() is apply
         assert isa(apply.res[0].type, TempType[Attribute]), f"{apply.res[0]}"
 
         temp_type = op.temp.type

@@ -261,7 +261,7 @@ class AttributeOp(IRDLOperation):
         operands: list[SSAValue | None] = [None]
         if isinstance(value, Attribute):
             attributes["value"] = value
-        elif isinstance(value, SSAValue):
+        elif value is not None:
             operands = [value]
 
         super().__init__(

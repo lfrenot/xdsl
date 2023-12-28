@@ -6,7 +6,7 @@ from xdsl.dialects.builtin import (
     Float64Type,
     FloatAttr,
 )
-from xdsl.ir import OpResult
+from xdsl.ir import Operation
 from xdsl.pattern_rewriter import (
     PatternRewriter,
     RewritePattern,
@@ -25,11 +25,11 @@ class SimplifyRedundantTranspose(RewritePattern):
         """
         # Look at the input of the current transpose.
         transpose_input = op.arg
-        if not isinstance(transpose_input, OpResult):
+        if not isinstance(transpose_input.owner, Operation):
             # Input was not produced by an operation, could be a function argument
             return
 
-        transpose_input_op = transpose_input.op
+        transpose_input_op = transpose_input.owner
         if not isinstance(transpose_input_op, TransposeOp):
             # Input defined by another transpose? If not, no match.
             return
@@ -45,11 +45,11 @@ class ReshapeReshapeOpPattern(RewritePattern):
         """
         # Look at the input of the current reshape.
         reshape_input = op.arg
-        if not isinstance(reshape_input, OpResult):
+        if not isinstance(reshape_input.owner, Operation):
             # Input was not produced by an operation, could be a function argument
             return
 
-        reshape_input_op = reshape_input.op
+        reshape_input_op = reshape_input.owner
         if not isinstance(reshape_input_op, ReshapeOp):
             # Input defined by another transpose? If not, no match.
             return
@@ -67,11 +67,11 @@ class FoldConstantReshapeOpPattern(RewritePattern):
         """
         # Look at the input of the current reshape.
         reshape_input = op.arg
-        if not isinstance(reshape_input, OpResult):
+        if not isinstance(reshape_input.owner, Operation):
             # Input was not produced by an operation, could be a function argument
             return
 
-        reshape_input_op = reshape_input.op
+        reshape_input_op = reshape_input.owner
         if not isinstance(reshape_input_op, ConstantOp):
             # Input defined by another transpose? If not, no match.
             return

@@ -15,6 +15,7 @@ from xdsl.frontend.op_resolver import OpResolver
 from xdsl.frontend.python_code_check import FunctionMap
 from xdsl.frontend.type_conversion import TypeConverter
 from xdsl.ir import Attribute, Block, Region, SSAValue
+from xdsl.utils.hints import isa
 
 
 @dataclass
@@ -452,9 +453,9 @@ class CodeGenerationVisitor(ast.NodeVisitor):
             op = affine.For.from_region([], [], start, end, body, step)
         else:
             self.inserter.insert_op(scf.Yield())
-            assert isinstance(start, SSAValue)
-            assert isinstance(end, SSAValue)
-            assert isinstance(step, SSAValue)
+            assert isa(start, SSAValue)
+            assert isa(end, SSAValue)
+            assert isa(step, SSAValue)
             op = scf.For(start, end, step, [], body)
 
         self.inserter.set_insertion_point_from_block(curr_block)

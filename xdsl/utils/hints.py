@@ -14,7 +14,11 @@ from typing import (
     get_origin,
 )
 
-from xdsl.ir import ParametrizedAttribute
+from xdsl.ir import (
+    Attribute,
+    ParametrizedAttribute,
+    TypedSSAValue,
+)
 from xdsl.utils.exceptions import VerifyException
 
 _T = TypeVar("_T")
@@ -73,6 +77,12 @@ def isa(arg: Any, hint: type[_T]) -> TypeGuard[_T]:
 
     if origin in [Union, types.UnionType]:
         return any(isa(arg, union_arg) for union_arg in get_args(hint))
+
+    if isinstance(origin, type) and issubclass(origin, TypedSSAValue):
+        if not isinstance(arg, origin):
+            return False
+        arg = cast(TypedSSAValue[Attribute], arg)
+        return isa(arg.type, get_args(hint)[0])
 
     if origin is Literal:
         return arg in get_args(hint)

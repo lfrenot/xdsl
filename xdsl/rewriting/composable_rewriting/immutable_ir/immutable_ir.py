@@ -17,6 +17,7 @@ from xdsl.ir import (
     SSAValue,
 )
 from xdsl.utils.exceptions import InvalidIRException
+from xdsl.utils.hints import isa
 from xdsl.utils.immutable_list import IList
 
 
@@ -531,12 +532,12 @@ class IOperation:
         operands: list[ISSAValue] = []
         if existing_operands is None:
             for operand in op.operands:
-                if isinstance(operand, OpResult):
+                if isa(operand, OpResult):
                     if operand in value_map:
                         operands.append(value_map[operand])
                     else:
                         raise Exception("Operand used before definition")
-                elif isinstance(operand, BlockArgument):
+                elif isa(operand, BlockArgument):
                     if operand not in value_map:
                         raise Exception(
                             "Block argument expected in mapping for op: " + op.name

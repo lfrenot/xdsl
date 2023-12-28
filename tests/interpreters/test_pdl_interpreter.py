@@ -17,7 +17,7 @@ from xdsl.interpreters.experimental.pdl import (
     PDLRewriteFunctions,
     PDLRewritePattern,
 )
-from xdsl.ir import Attribute, MLContext, OpResult
+from xdsl.ir import Attribute, MLContext
 from xdsl.irdl import IRDLOperation, irdl_op_definition, prop_def
 from xdsl.pattern_rewriter import (
     PatternRewriter,
@@ -31,9 +31,7 @@ from xdsl.utils.test_value import TestSSAValue
 class SwapInputs(RewritePattern):
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: arith.Addi, rewriter: PatternRewriter, /):
-        if not isinstance(op.lhs, OpResult):
-            return
-        if not isinstance(op.lhs.op, arith.Addi):
+        if not isinstance(op.lhs.owner, arith.Addi):
             return
         new_op = arith.Addi(op.rhs, op.lhs)
         rewriter.replace_op(op, [new_op])
@@ -138,11 +136,9 @@ def swap_arguments_pdl():
 class AddZero(RewritePattern):
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: arith.Addi, rewriter: PatternRewriter, /):
-        if not isinstance(op.rhs, OpResult):
+        if not isinstance(op.rhs.owner, arith.Constant):
             return
-        if not isinstance(op.rhs.op, arith.Constant):
-            return
-        rhs = op.rhs.op
+        rhs = op.rhs.owner
         if not isinstance(rhs_value := rhs.value, IntegerAttr):
             return
         if rhs_value.value.data != 0:
