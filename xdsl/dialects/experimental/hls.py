@@ -130,7 +130,7 @@ class HLSStreamWrite(IRDLOperation):
 class HLSStreamRead(IRDLOperation):
     name = "hls.read"
     stream: Operand = operand_def(HLSStreamType)
-    res: OpResult = result_def(AnyAttr())
+    res: OpResult = result_def()
 
     def __init__(self, stream: SSAValue):
         assert isinstance(stream.type, HLSStreamType)

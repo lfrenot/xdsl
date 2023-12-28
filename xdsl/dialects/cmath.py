@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Annotated
+
 from xdsl.dialects.builtin import Float32Type, Float64Type
 from xdsl.ir import (
     Dialect,
@@ -36,7 +38,7 @@ class Norm(IRDLOperation):
     op: Operand = operand_def(
         ParamAttrConstraint(ComplexType, [AnyOf([Float32Type, Float64Type])])
     )
-    res: OpResult = result_def(AnyOf([Float32Type, Float64Type]))
+    res: OpResult = result_def(Float32Type | Float64Type)
 
     # TODO replace with trait
     def verify_(self) -> None:
@@ -57,7 +59,10 @@ class Mul(IRDLOperation):
         ParamAttrConstraint(ComplexType, [AnyOf([Float32Type, Float64Type])])
     )
     result: OpResult = result_def(
-        ParamAttrConstraint(ComplexType, [AnyOf([Float32Type, Float64Type])])
+        Annotated[
+            ComplexType,
+            ParamAttrConstraint(ComplexType, [AnyOf([Float32Type, Float64Type])]),
+        ]
     )
 
     # TODO replace with trait

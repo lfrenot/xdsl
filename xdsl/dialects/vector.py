@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Annotated
 
 from xdsl.dialects.builtin import (
+    AnyVectorType,
     IndexType,
     VectorBaseTypeAndRankConstraint,
     VectorBaseTypeConstraint,
@@ -171,7 +173,7 @@ class Maskedload(IRDLOperation):
     indices: VarOperand = var_operand_def(IndexType)
     mask: Operand = operand_def(VectorBaseTypeAndRankConstraint(i1, 1))
     passthrough: Operand = operand_def(VectorType)
-    res: OpResult = result_def(VectorRankConstraint(1))
+    res: OpResult = result_def(Annotated[AnyVectorType, VectorRankConstraint(1)])
 
     def verify_(self):
         memref_type = self.memref.type
@@ -272,7 +274,9 @@ class Print(IRDLOperation):
 class Createmask(IRDLOperation):
     name = "vector.create_mask"
     mask_operands: VarOperand = var_operand_def(IndexType)
-    mask_vector: OpResult = result_def(VectorBaseTypeConstraint(i1))
+    mask_vector: OpResult = result_def(
+        Annotated[AnyVectorType, VectorBaseTypeConstraint(i1)]
+    )
 
     def verify_(self):
         assert isa(self.mask_vector.type, VectorType[Attribute])

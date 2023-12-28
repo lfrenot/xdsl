@@ -48,7 +48,7 @@ class While(IRDLOperation):
     name = "scf.while"
     arguments: VarOperand = var_operand_def(AnyAttr())
 
-    res: VarOpResult = var_result_def(AnyAttr())
+    res: VarOpResult = var_result_def()
     before_region: Region = region_def()
     after_region: Region = region_def()
 
@@ -94,7 +94,7 @@ class Yield(AbstractYieldOperation[Attribute]):
 @irdl_op_definition
 class If(IRDLOperation):
     name = "scf.if"
-    output: VarOpResult = var_result_def(AnyAttr())
+    output: VarOpResult = var_result_def()
     cond: Operand = operand_def(IntegerType(1))
 
     true_region: Region = region_def()
@@ -142,7 +142,7 @@ class For(IRDLOperation):
 
     iter_args: VarOperand = var_operand_def(AnyAttr())
 
-    res: VarOpResult = var_result_def(AnyAttr())
+    res: VarOpResult = var_result_def()
 
     body: Region = region_def("single_block")
 
@@ -311,7 +311,7 @@ class ParallelOp(IRDLOperation):
     upperBound: VarOperand = var_operand_def(IndexType)
     step: VarOperand = var_operand_def(IndexType)
     initVals: VarOperand = var_operand_def(AnyAttr())
-    res: VarOpResult = var_result_def(AnyAttr())
+    res: VarOpResult = var_result_def()
 
     body: Region = region_def("single_block")
 

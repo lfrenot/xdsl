@@ -28,7 +28,7 @@ class Declare(IRDLOperation):
 @irdl_op_definition
 class Fetch(IRDLOperation):
     name = "symref.fetch"
-    value: OpResult = result_def(AnyAttr())
+    value: OpResult = result_def()
     symbol: SymbolRefAttr = attr_def(SymbolRefAttr)
 
     @staticmethod

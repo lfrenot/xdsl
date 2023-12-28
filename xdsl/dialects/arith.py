@@ -8,9 +8,6 @@ from xdsl.dialects.builtin import (
     AnyFloat,
     AnyIntegerAttr,
     ContainerOf,
-    Float16Type,
-    Float32Type,
-    Float64Type,
     FloatAttr,
     IndexType,
     IntAttr,
@@ -23,7 +20,6 @@ from xdsl.dialects.builtin import (
 from xdsl.dialects.llvm import FastMathAttr as LLVMFastMathAttr
 from xdsl.ir import Attribute, Dialect, Operation, OpResult, SSAValue
 from xdsl.irdl import (
-    AnyOf,
     ConstraintVar,
     IRDLOperation,
     Operand,
@@ -41,8 +37,10 @@ from xdsl.utils.exceptions import VerifyException
 from xdsl.utils.hints import isa
 
 boolLike = ContainerOf(IntegerType(1))
-signlessIntegerLike = ContainerOf(AnyOf([IntegerType, IndexType]))
-floatingPointLike = ContainerOf(AnyOf([Float16Type, Float32Type, Float64Type]))
+signlessIntegerLike = (
+    VectorType[IntegerType | IndexType] | TensorType[IntegerType | IndexType]
+)
+floatingPointLike = VectorType[AnyFloat] | TensorType[AnyFloat]
 
 _FloatTypeT = TypeVar("_FloatTypeT", bound=AnyFloat)
 
@@ -550,7 +548,7 @@ class Cmpi(IRDLOperation, ComparisonOperation):
     predicate: AnyIntegerAttr = prop_def(AnyIntegerAttr)
     lhs: Operand = operand_def(signlessIntegerLike)
     rhs: Operand = operand_def(signlessIntegerLike)
-    result: OpResult = result_def(IntegerType(1))
+    result: OpResult = result_def(Annotated[IntegerType, IntegerType(1)])
 
     def __init__(
         self,
@@ -640,7 +638,7 @@ class Cmpf(IRDLOperation, ComparisonOperation):
     predicate: AnyIntegerAttr = prop_def(AnyIntegerAttr)
     lhs: Operand = operand_def(floatingPointLike)
     rhs: Operand = operand_def(floatingPointLike)
-    result: OpResult = result_def(IntegerType(1))
+    result: OpResult = result_def(Annotated[IntegerType, IntegerType(1)])
 
     def __init__(
         self,
@@ -792,7 +790,7 @@ class Negf(IRDLOperation):
     name = "arith.negf"
     fastmath: FastMathFlagsAttr | None = opt_prop_def(FastMathFlagsAttr)
     operand: Operand = operand_def(floatingPointLike)
-    result: OpResult = result_def(floatingPointLike)
+    result: OpResult = result_def(Annotated[Attribute, floatingPointLike])
 
     def __init__(
         self, operand: Operation | SSAValue, fastmath: FastMathFlagsAttr | None = None

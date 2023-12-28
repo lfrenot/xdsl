@@ -864,7 +864,7 @@ class _TraitsFieldDef:
 
 
 def result_def(
-    constraint: AttrConstraint | Attribute | type[Attribute] | TypeVar = Attribute,
+    constraint: type[AttributeInvT] = Attribute,
     *,
     default: None = None,
     resolver: None = None,
@@ -877,7 +877,7 @@ def result_def(
 
 
 def var_result_def(
-    constraint: AttrConstraint | Attribute | type[Attribute] | TypeVar = Attribute,
+    constraint: type[AttributeInvT] = Attribute,
     *,
     default: None = None,
     resolver: None = None,
@@ -890,7 +890,7 @@ def var_result_def(
 
 
 def opt_result_def(
-    constraint: AttrConstraint | Attribute | type[Attribute] | TypeVar = Attribute,
+    constraint: type[AttributeInvT] = Attribute,
     *,
     default: None = None,
     resolver: None = None,

@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC
 from collections.abc import Sequence
 from enum import Enum
-from typing import Generic, TypeVar
+from typing import Annotated, Generic, TypeVar
 
 from xdsl.dialects import llvm
 from xdsl.dialects.builtin import AnyFloat, IntegerType, Signedness, StringAttr, i32
@@ -611,7 +611,7 @@ class Test(MPIBaseOp):
 
     request: Operand = operand_def(RequestType)
 
-    flag: OpResult = result_def(t_bool)
+    flag: OpResult = result_def(Annotated[IntegerType, IntegerType(1)])
     status: OpResult = result_def(StatusType)
 
     def __init__(self, request: Operand):
@@ -717,7 +717,7 @@ class GetStatusField(MPIBaseOp):
 
     field: StringAttr = attr_def(StringAttr)
 
-    result: OpResult = result_def(i32)
+    result: OpResult = result_def(Annotated[IntegerType, IntegerType(32)])
 
     def __init__(self, status_obj: Operand, field: StatusTypeField):
         return super().__init__(
@@ -747,7 +747,7 @@ class CommRank(MPIBaseOp):
 
     name = "mpi.comm.rank"
 
-    rank: OpResult = result_def(i32)
+    rank: OpResult = result_def(Annotated[IntegerType, IntegerType(32)])
 
     def __init__(self):
         return super().__init__(result_types=[i32])
@@ -769,7 +769,7 @@ class CommSize(MPIBaseOp):
 
     name = "mpi.comm.size"
 
-    size: OpResult = result_def(i32)
+    size: OpResult = result_def(Annotated[IntegerType, IntegerType(32)])
 
     def __init__(self):
         return super().__init__(result_types=[i32])
@@ -811,7 +811,7 @@ class UnwrapMemrefOp(MPIBaseOp):
     ref: Operand = operand_def(MemRefType[AnyNumericType])
 
     ptr: OpResult = result_def(llvm.LLVMPointerType)
-    len: OpResult = result_def(i32)
+    len: OpResult = result_def(Annotated[IntegerType, IntegerType(32)])
     type: OpResult = result_def(DataType)
 
     def __init__(self, ref: SSAValue | Operation):

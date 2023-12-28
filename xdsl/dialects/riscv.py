@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Sequence, Set
 from io import StringIO
-from typing import IO, ClassVar, Generic, TypeAlias, TypeVar
+from typing import IO, Annotated, ClassVar, Generic, TypeAlias, TypeVar
 
 from typing_extensions import Self
 
@@ -573,7 +573,7 @@ class RdRsRsOperation(
     This is called R-Type in the RISC-V specification.
     """
 
-    rd: OpResult = result_def(RDInvT)
+    rd: OpResult = result_def(Annotated[RISCVRegisterType, RDInvT])
     rs1: Operand = operand_def(RS1InvT)
     rs2: Operand = operand_def(RS2InvT)
 
@@ -891,7 +891,7 @@ class RdRsOperation(Generic[RDInvT, RSInvT], IRDLOperation, RISCVInstruction, AB
     source register.
     """
 
-    rd: OpResult = result_def(RDInvT)
+    rd: OpResult = result_def(Annotated[RISCVRegisterType, RDInvT])
     rs: Operand = operand_def(RSInvT)
 
     def __init__(
@@ -2739,7 +2739,7 @@ class GetAnyRegisterOperation(Generic[RDInvT], IRDLOperation, RISCVOp):
     ```
     """
 
-    res: OpResult = result_def(RDInvT)
+    res: OpResult = result_def(Annotated[RISCVRegisterType, RDInvT])
 
     def __init__(
         self,

@@ -544,7 +544,7 @@ class GenericOp(Generic[_Attr, _Operand, _Result], IRDLOperation):
 
     attr: _Attr = attr_def(_Attr)
     operand: Operand = operand_def(_Operand)
-    result: OpResult = result_def(_Result)
+    result: OpResult = result_def(Annotated[FooType | BarType, _Result])
 
 
 @irdl_op_definition

@@ -418,7 +418,7 @@ class TriggerOp(IRDLOperation):
 
     instance = operand_def(InstanceType)
 
-    outputs = var_result_def(AnyAttr())
+    outputs = var_result_def()
 
     def __init__(
         self,
@@ -478,7 +478,7 @@ class HWInstanceOp(IRDLOperation):
     clock = operand_def(signlessIntegerLike)
     reset = operand_def(signlessIntegerLike)
 
-    outputs = var_result_def(AnyAttr())
+    outputs = var_result_def()
 
     def __init__(
         self,

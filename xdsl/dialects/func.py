@@ -248,7 +248,7 @@ class Call(IRDLOperation):
     callee: FlatSymbolRefAttr = prop_def(FlatSymbolRefAttr)
 
     # Note: naming this results triggers an ArgumentError
-    res: VarOpResult = var_result_def(AnyAttr())
+    res: VarOpResult = var_result_def()
 
     # TODO how do we verify that the types are correct?
     def __init__(

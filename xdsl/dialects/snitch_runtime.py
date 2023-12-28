@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import Annotated, Generic, TypeVar
 
-from xdsl.dialects.builtin import IndexType, i32, i64
+from xdsl.dialects.builtin import IndexType, IntegerType, i32, i64
 from xdsl.ir import Attribute, Dialect, Operation, OpResult, SSAValue
 from xdsl.irdl import (
     AttrSizedOperandSegments,
@@ -42,7 +42,7 @@ class SnitchRuntimeGetInfo(SnitchRuntimeBaseOperation, ABC):
     A base class for snitch runtime functions that get a certain value at runtime
     """
 
-    result: OpResult = result_def(i32)
+    result: OpResult = result_def(Annotated[IntegerType, i32])
 
     def __init__(
         self,
@@ -267,8 +267,8 @@ class GetMemoryInfoBaseOperation(SnitchRuntimeBaseOperation, ABC):
     Generic base class for operations returning memory slices
     """
 
-    slice_begin: OpResult = result_def(slice_t_begin)
-    slice_end: OpResult = result_def(slice_t_end)
+    slice_begin: OpResult = result_def(Annotated[IntegerType, slice_t_begin])
+    slice_end: OpResult = result_def(Annotated[IntegerType, slice_t_end])
 
     def __init__(
         self,
@@ -312,7 +312,7 @@ class DmaStart1DBaseOperation(SnitchRuntimeBaseOperation, Generic[_T], ABC):
     dst: Operand = operand_def(T)
     src: Operand = operand_def(T)
     size: Operand = operand_def(IndexType)
-    transfer_id: OpResult = result_def(tx_id)
+    transfer_id: OpResult = result_def(Annotated[IntegerType, tx_id])
 
     def __init__(
         self,
@@ -335,7 +335,7 @@ class DmaStart2DBaseOperation(SnitchRuntimeBaseOperation, Generic[_T], ABC):
     src_stride: Operand = operand_def(IndexType)
     size: Operand = operand_def(IndexType)
     repeat: Operand = operand_def(IndexType)
-    transfer_id: OpResult = result_def(tx_id)
+    transfer_id: OpResult = result_def(Annotated[IntegerType, tx_id])
 
     def __init__(
         self,

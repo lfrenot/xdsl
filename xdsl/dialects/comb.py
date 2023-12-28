@@ -253,7 +253,7 @@ class ICmpOp(IRDLOperation, ABC):
     )
     lhs: Operand = operand_def(T)
     rhs: Operand = operand_def(T)
-    result: OpResult = result_def(IntegerType(1))
+    result: OpResult = result_def(Annotated[IntegerType, IntegerType(1)])
 
     two_state: UnitAttr = attr_def(UnitAttr)
 
@@ -330,7 +330,7 @@ class ParityOp(IRDLOperation):
     name = "comb.parity"
 
     input: Operand = operand_def(IntegerType)
-    result: OpResult = result_def(IntegerType(1))
+    result: OpResult = result_def(Annotated[IntegerType, IntegerType(1)])
 
     two_state: UnitAttr | None = opt_attr_def(UnitAttr)
 

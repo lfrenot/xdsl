@@ -191,7 +191,7 @@ class Load(IRDLOperation):
     name = "memref.load"
     memref: Operand = operand_def(MemRefType[Attribute])
     indices: VarOperand = var_operand_def(IndexType)
-    res: OpResult = result_def(AnyAttr())
+    res: OpResult = result_def()
 
     # TODO varargs for indexing, which must match the memref dimensions
     # Problem: memref dimensions require variadic type parameters,
