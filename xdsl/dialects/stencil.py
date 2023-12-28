@@ -13,7 +13,6 @@ from xdsl.ir import (
     Block,
     Dialect,
     Operation,
-    OpResult,
     ParametrizedAttribute,
     Region,
     SSAValue,
@@ -24,7 +23,6 @@ from xdsl.irdl import (
     Operand,
     ParameterDef,
     VarOperand,
-    VarOpResult,
     attr_def,
     irdl_attr_definition,
     irdl_op_definition,
@@ -315,7 +313,7 @@ class ApplyOp(IRDLOperation):
     name = "stencil.apply"
     args: VarOperand = var_operand_def(Attribute)
     region: Region = region_def()
-    res: VarOpResult = var_result_def(TempType)
+    res = var_result_def(TempType)
 
     traits = frozenset([IsolatedFromAbove()])
 
@@ -392,7 +390,7 @@ class CastOp(IRDLOperation):
 
     name = "stencil.cast"
     field: Operand = operand_def(FieldType)
-    result: OpResult = result_def(FieldType)
+    result = result_def(FieldType)
 
     @staticmethod
     def get(
@@ -450,7 +448,7 @@ class ExternalLoadOp(IRDLOperation):
 
     name = "stencil.external_load"
     field: Operand = operand_def(Attribute)
-    result: OpResult = result_def(FieldType[Attribute] | memref.MemRefType[Attribute])
+    result = result_def(FieldType[Attribute] | memref.MemRefType[Attribute])
 
     @staticmethod
     def get(
@@ -488,7 +486,7 @@ class IndexOp(IRDLOperation):
     name = "stencil.index"
     dim: AnyIntegerAttr = attr_def(AnyIntegerAttr)
     offset: IndexAttr = attr_def(IndexAttr)
-    idx: OpResult = result_def(builtin.IndexType)
+    idx = result_def(builtin.IndexType)
 
 
 @irdl_op_definition
@@ -512,7 +510,7 @@ class AccessOp(IRDLOperation):
     temp: Operand = operand_def(TempType)
     offset: IndexAttr = attr_def(IndexAttr)
     offset_mapping: ArrayAttr[IntAttr] | None = opt_attr_def(ArrayAttr[IntAttr])
-    res: OpResult = result_def(Attribute)
+    res = result_def(Attribute)
 
     traits = frozenset([HasParent(ApplyOp)])
 
@@ -604,7 +602,7 @@ class LoadOp(IRDLOperation):
 
     name = "stencil.load"
     field: Operand = operand_def(FieldType)
-    res: OpResult = result_def(TempType)
+    res = result_def(TempType)
 
     @staticmethod
     def get(
@@ -653,7 +651,7 @@ class BufferOp(IRDLOperation):
 
     name = "stencil.buffer"
     temp: Operand = operand_def(TempType)
-    res: OpResult = result_def(TempType)
+    res = result_def(TempType)
 
     def __init__(self, temp: SSAValue | Operation):
         temp = SSAValue.get(temp)
@@ -721,7 +719,7 @@ class StoreResultOp(IRDLOperation):
 
     name = "stencil.store_result"
     args: VarOperand = var_operand_def(Attribute)
-    res: OpResult = result_def(ResultType)
+    res = result_def(ResultType)
 
 
 @irdl_op_definition

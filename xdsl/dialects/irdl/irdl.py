@@ -9,7 +9,6 @@ from xdsl.ir import (
     Attribute,
     Block,
     Dialect,
-    OpResult,
     ParametrizedAttribute,
     Region,
     SSAValue,
@@ -257,7 +256,7 @@ class IsOp(IRDLOperation):
     name = "irdl.is"
 
     expected: Attribute = attr_def(Attribute)
-    output: OpResult = result_def(AttributeType)
+    output = result_def(AttributeType)
 
     def __init__(self, expected: Attribute):
         super().__init__(
@@ -282,7 +281,7 @@ class ParametricOp(IRDLOperation):
 
     base_type: SymbolRefAttr = attr_def(SymbolRefAttr)
     args: VarOperand = var_operand_def(AttributeType)
-    output: OpResult = result_def(AttributeType)
+    output = result_def(AttributeType)
 
     def __init__(
         self, base_type: str | StringAttr | SymbolRefAttr, args: Sequence[SSAValue]
@@ -319,7 +318,7 @@ class AnyOp(IRDLOperation):
 
     name = "irdl.any"
 
-    output: OpResult = result_def(AttributeType)
+    output = result_def(AttributeType)
 
     def __init__(self):
         super().__init__(result_types=[AttributeType()])
@@ -339,7 +338,7 @@ class AnyOfOp(IRDLOperation):
     name = "irdl.any_of"
 
     args: VarOperand = var_operand_def(AttributeType)
-    output: OpResult = result_def(AttributeType)
+    output = result_def(AttributeType)
 
     def __init__(self, args: Sequence[SSAValue]):
         super().__init__(operands=[args], result_types=[AttributeType()])
@@ -364,7 +363,7 @@ class AllOfOp(IRDLOperation):
     name = "irdl.all_of"
 
     args: VarOperand = var_operand_def(AttributeType)
-    output: OpResult = result_def(AttributeType)
+    output = result_def(AttributeType)
 
     def __init__(self, args: Sequence[SSAValue]):
         super().__init__(operands=[args], result_types=[AttributeType()])

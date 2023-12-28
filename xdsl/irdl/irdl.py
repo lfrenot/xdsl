@@ -35,6 +35,7 @@ from xdsl.ir import (
     ParametrizedAttribute,
     Region,
     SSAValue,
+    TypedOpResult,
 )
 from xdsl.utils.diagnostic import Diagnostic
 from xdsl.utils.exceptions import (
@@ -869,11 +870,11 @@ def result_def(
     default: None = None,
     resolver: None = None,
     init: Literal[False] = False,
-) -> OpResult:
+) -> TypedOpResult[AttributeInvT]:
     """
     Defines a result of an operation.
     """
-    return cast(OpResult, _ResultFieldDef(ResultDef, constraint))
+    return cast(TypedOpResult[AttributeInvT], _ResultFieldDef(ResultDef, constraint))
 
 
 def var_result_def(
@@ -882,11 +883,14 @@ def var_result_def(
     default: None = None,
     resolver: None = None,
     init: Literal[False] = False,
-) -> VarOpResult:
+) -> Sequence[TypedOpResult[AttributeInvT]]:
     """
     Defines a variadic result of an operation.
     """
-    return cast(VarOpResult, _ResultFieldDef(VarResultDef, constraint))
+    return cast(
+        Sequence[TypedOpResult[AttributeInvT]],
+        _ResultFieldDef(VarResultDef, constraint),
+    )
 
 
 def opt_result_def(
@@ -895,11 +899,13 @@ def opt_result_def(
     default: None = None,
     resolver: None = None,
     init: Literal[False] = False,
-) -> OptOpResult:
+) -> TypedOpResult[AttributeInvT] | None:
     """
     Defines an optional result of an operation.
     """
-    return cast(OptOpResult, _ResultFieldDef(OptResultDef, constraint))
+    return cast(
+        TypedOpResult[AttributeInvT] | None, _ResultFieldDef(OptResultDef, constraint)
+    )
 
 
 def prop_def(

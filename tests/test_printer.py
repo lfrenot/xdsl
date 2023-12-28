@@ -13,7 +13,6 @@ from xdsl.ir import (
     Attribute,
     Block,
     MLContext,
-    OpResult,
     ParametrizedAttribute,
     Region,
 )
@@ -22,7 +21,6 @@ from xdsl.irdl import (
     Operand,
     ParameterDef,
     VarOperand,
-    VarOpResult,
     irdl_attr_definition,
     irdl_op_definition,
     operand_def,
@@ -504,7 +502,7 @@ class PlusCustomFormatOp(IRDLOperation):
     name = "test.add"
     lhs: Operand = operand_def(IntegerType)
     rhs: Operand = operand_def(IntegerType)
-    res: OpResult = result_def(IntegerType)
+    res = result_def(IntegerType)
 
     @classmethod
     def parse(cls, parser: Parser) -> PlusCustomFormatOp:
@@ -611,7 +609,7 @@ class NoCustomFormatOp(IRDLOperation):
     name = "test.no_custom_format"
 
     ops: VarOperand = var_operand_def()
-    res: VarOpResult = var_result_def()
+    res = var_result_def()
 
 
 def test_missing_custom_format():

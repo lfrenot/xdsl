@@ -27,7 +27,6 @@ from xdsl.ir import (
     Data,
     Dialect,
     Operation,
-    OpResult,
     ParametrizedAttribute,
     Region,
     SSAValue,
@@ -578,7 +577,7 @@ class GEPOp(IRDLOperation):
     ssa_indices: VarOperand = var_operand_def(IntegerType)
     elem_type: Attribute | None = opt_prop_def(Attribute)
 
-    result: OpResult = result_def(LLVMPointerType)
+    result = result_def(LLVMPointerType)
 
     rawConstantIndices: DenseArrayBase = prop_def(DenseArrayBase)
     inbounds: UnitAttr | None = opt_prop_def(UnitAttr)
@@ -674,7 +673,7 @@ class AllocaOp(IRDLOperation):
     alignment = opt_prop_def(AnyIntegerAttr)
     elem_type = opt_prop_def(Attribute)
 
-    res: OpResult = result_def()
+    res = result_def()
 
     def __init__(
         self,
@@ -701,7 +700,7 @@ class IntToPtrOp(IRDLOperation):
 
     input: Operand = operand_def(IntegerType)
 
-    output: OpResult = result_def(LLVMPointerType)
+    output = result_def(LLVMPointerType)
 
     def __init__(self, input: SSAValue | Operation, ptr_type: Attribute | None = None):
         if ptr_type is None:
@@ -717,7 +716,7 @@ class PtrToIntOp(IRDLOperation):
 
     input: Operand = operand_def(LLVMPointerType)
 
-    output: OpResult = result_def(IntegerType)
+    output = result_def(IntegerType)
 
     def __init__(self, arg: SSAValue | Operation, int_type: Attribute = i64):
         super().__init__(operands=[arg], result_types=[int_type])
@@ -731,7 +730,7 @@ class LoadOp(IRDLOperation):
 
     ordering = opt_prop_def(IntegerAttr[IntegerType])
 
-    dereferenced_value: OpResult = result_def()
+    dereferenced_value = result_def()
 
     def __init__(self, ptr: SSAValue | Operation, result_type: Attribute | None = None):
         if result_type is None:
@@ -790,7 +789,7 @@ class StoreOp(IRDLOperation):
 class NullOp(IRDLOperation):
     name = "llvm.mlir.null"
 
-    nullptr: OpResult = result_def(LLVMPointerType)
+    nullptr = result_def(LLVMPointerType)
 
     def __init__(self, ptr_type: LLVMPointerType | None = None):
         if ptr_type is None:
@@ -811,7 +810,7 @@ class ExtractValueOp(IRDLOperation):
     position: DenseArrayBase = prop_def(DenseArrayBase)
     container: Operand = operand_def(Attribute)
 
-    res: OpResult = result_def(Attribute)
+    res = result_def(Attribute)
 
     def __init__(
         self,
@@ -840,7 +839,7 @@ class InsertValueOp(IRDLOperation):
     container: Operand = operand_def(Attribute)
     value: Operand = operand_def(Attribute)
 
-    res: OpResult = result_def(Attribute)
+    res = result_def(Attribute)
 
     def __init__(
         self,
@@ -865,7 +864,7 @@ class UndefOp(IRDLOperation):
 
     name = "llvm.mlir.undef"
 
-    res: OpResult = result_def(Attribute)
+    res = result_def(Attribute)
 
     def __init__(self, result_type: Attribute):
         super().__init__(result_types=[result_type])
@@ -953,7 +952,7 @@ class AddressOfOp(IRDLOperation):
     name = "llvm.mlir.addressof"
 
     global_name: SymbolRefAttr = prop_def(SymbolRefAttr)
-    result: OpResult = result_def(LLVMPointerType)
+    result = result_def(LLVMPointerType)
 
     def __init__(
         self,
@@ -1088,7 +1087,7 @@ class ReturnOp(IRDLOperation):
 @irdl_op_definition
 class ConstantOp(IRDLOperation):
     name = "llvm.mlir.constant"
-    result: OpResult = result_def(Attribute)
+    result = result_def(Attribute)
     value: Attribute = prop_def(Attribute)
 
     def __init__(self, value: Attribute, value_type: Attribute):

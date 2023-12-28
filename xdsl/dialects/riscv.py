@@ -23,7 +23,6 @@ from xdsl.ir import (
     Data,
     Dialect,
     Operation,
-    OpResult,
     Region,
     SSAValue,
     TypeAttribute,
@@ -33,7 +32,6 @@ from xdsl.irdl import (
     Operand,
     OptSingleBlockRegion,
     VarOperand,
-    VarOpResult,
     attr_def,
     irdl_attr_definition,
     irdl_op_definition,
@@ -573,7 +571,7 @@ class RdRsRsOperation(
     This is called R-Type in the RISC-V specification.
     """
 
-    rd: OpResult = result_def(Annotated[RISCVRegisterType, RDInvT])
+    rd = result_def(Annotated[RISCVRegisterType, RDInvT])
     rs1: Operand = operand_def(RS1InvT)
     rs2: Operand = operand_def(RS2InvT)
 
@@ -606,7 +604,7 @@ class RdImmIntegerOperation(IRDLOperation, RISCVInstruction, ABC):
     immediate operand (e.g. U-Type and J-Type instructions in the RISC-V spec).
     """
 
-    rd: OpResult = result_def(IntRegisterType)
+    rd = result_def(IntRegisterType)
     immediate: AnyIntegerAttr | LabelAttr = attr_def(AnyIntegerAttr | LabelAttr)
 
     def __init__(
@@ -729,7 +727,7 @@ class RdRsImmIntegerOperation(IRDLOperation, RISCVInstruction, ABC):
     This is called I-Type in the RISC-V specification.
     """
 
-    rd: OpResult = result_def(IntRegisterType)
+    rd = result_def(IntRegisterType)
     rs1: Operand = operand_def(IntRegisterType)
     immediate: AnyIntegerAttr | LabelAttr = attr_def(AnyIntegerAttr | LabelAttr)
 
@@ -891,7 +889,7 @@ class RdRsOperation(Generic[RDInvT, RSInvT], IRDLOperation, RISCVInstruction, AB
     source register.
     """
 
-    rd: OpResult = result_def(Annotated[RISCVRegisterType, RDInvT])
+    rd = result_def(Annotated[RISCVRegisterType, RDInvT])
     rs: Operand = operand_def(RSInvT)
 
     def __init__(
@@ -1080,7 +1078,7 @@ class CsrReadWriteOperation(IRDLOperation, RISCVInstruction, ABC):
       returned in rd
     """
 
-    rd: OpResult = result_def(IntRegisterType)
+    rd = result_def(IntRegisterType)
     rs1: Operand = operand_def(IntRegisterType)
     csr: AnyIntegerAttr = attr_def(AnyIntegerAttr)
     writeonly: UnitAttr | None = opt_attr_def(UnitAttr)
@@ -1112,8 +1110,6 @@ class CsrReadWriteOperation(IRDLOperation, RISCVInstruction, ABC):
 
     def verify_(self) -> None:
         if not self.writeonly:
-            return
-        if not isinstance(self.rd.type, IntRegisterType):
             return
         if self.rd.type.is_allocated and self.rd.type.data != "zero":
             raise VerifyException(
@@ -1158,7 +1154,7 @@ class CsrBitwiseOperation(IRDLOperation, RISCVInstruction, ABC):
       to writing to a CSR takes place even if the mask in rs has no actual bits set.
     """
 
-    rd: OpResult = result_def(IntRegisterType)
+    rd = result_def(IntRegisterType)
     rs1: Operand = operand_def(IntRegisterType)
     csr: AnyIntegerAttr = attr_def(AnyIntegerAttr)
     readonly: UnitAttr | None = opt_attr_def(UnitAttr)
@@ -1234,7 +1230,7 @@ class CsrReadWriteImmOperation(IRDLOperation, RISCVInstruction, ABC):
       returned in rd
     """
 
-    rd: OpResult = result_def(IntRegisterType)
+    rd = result_def(IntRegisterType)
     csr: AnyIntegerAttr = attr_def(AnyIntegerAttr)
     immediate: AnyIntegerAttr = attr_def(AnyIntegerAttr)
     writeonly: UnitAttr | None = opt_attr_def(UnitAttr)
@@ -1266,8 +1262,6 @@ class CsrReadWriteImmOperation(IRDLOperation, RISCVInstruction, ABC):
 
     def verify_(self) -> None:
         if self.writeonly is None:
-            return
-        if not isinstance(self.rd.type, IntRegisterType):
             return
         if self.rd.type.is_allocated and self.rd.type.data != "zero":
             raise VerifyException(
@@ -1316,7 +1310,7 @@ class CsrBitwiseImmOperation(IRDLOperation, RISCVInstruction, ABC):
       place.
     """
 
-    rd: OpResult = result_def(IntRegisterType)
+    rd = result_def(IntRegisterType)
     csr: AnyIntegerAttr = attr_def(AnyIntegerAttr)
     immediate: AnyIntegerAttr = attr_def(AnyIntegerAttr)
 
@@ -2635,7 +2629,7 @@ class CustomAssemblyInstructionOp(IRDLOperation, RISCVInstruction):
 
     name = "riscv.custom_assembly_instruction"
     inputs: VarOperand = var_operand_def()
-    outputs: VarOpResult = var_result_def()
+    outputs = var_result_def()
     instruction_name: StringAttr = attr_def(StringAttr)
     comment: StringAttr | None = opt_attr_def(StringAttr)
 
@@ -2739,7 +2733,7 @@ class GetAnyRegisterOperation(Generic[RDInvT], IRDLOperation, RISCVOp):
     ```
     """
 
-    res: OpResult = result_def(Annotated[RISCVRegisterType, RDInvT])
+    res = result_def(Annotated[RISCVRegisterType, RDInvT])
 
     def __init__(
         self,
@@ -2774,7 +2768,7 @@ class RdRsRsRsFloatOperation(IRDLOperation, RISCVInstruction, ABC):
     e.g: fused-multiply-add (FMA) instructions.
     """
 
-    rd: OpResult = result_def(FloatRegisterType)
+    rd = result_def(FloatRegisterType)
     rs1: Operand = operand_def(FloatRegisterType)
     rs2: Operand = operand_def(FloatRegisterType)
     rs3: Operand = operand_def(FloatRegisterType)
@@ -2813,7 +2807,7 @@ class RdRsRsFloatFloatIntegerOperation(IRDLOperation, RISCVInstruction, ABC):
     two floating-point input registers and an integer destination register.
     """
 
-    rd: OpResult = result_def(IntRegisterType)
+    rd = result_def(IntRegisterType)
     rs1: Operand = operand_def(FloatRegisterType)
     rs2: Operand = operand_def(FloatRegisterType)
 
@@ -2901,7 +2895,7 @@ class RdRsImmFloatOperation(IRDLOperation, RISCVInstruction, ABC):
     one immediate operand.
     """
 
-    rd: OpResult = result_def(FloatRegisterType)
+    rd = result_def(FloatRegisterType)
     rs1: Operand = operand_def(IntRegisterType)
     immediate: AnyIntegerAttr | LabelAttr = attr_def(AnyIntegerAttr | LabelAttr)
 

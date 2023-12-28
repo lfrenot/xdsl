@@ -13,7 +13,7 @@ from xdsl.dialects.builtin import (
     i32,
 )
 from xdsl.dialects.test import TestType
-from xdsl.ir import Attribute, OpResult, Region
+from xdsl.ir import Attribute, Region
 from xdsl.irdl import (
     AnyAttr,
     AttributeDef,
@@ -33,7 +33,6 @@ from xdsl.irdl import (
     RegionDef,
     ResultDef,
     VarOperand,
-    VarOpResult,
     VarRegion,
     attr_def,
     irdl_op_definition,
@@ -69,7 +68,7 @@ class OpDefTestOp(IRDLOperation):
     irdl_options = [AttrSizedOperandSegments()]
 
     operand: Operand = operand_def()
-    result: OpResult = result_def()
+    result = result_def()
     prop: Attribute = prop_def(Attribute)
     attr: Attribute = attr_def(Attribute)
     region: Region = region_def()
@@ -167,7 +166,7 @@ class ConstraintVarOp(IRDLOperation):
     T = Annotated[IntegerType | IndexType, ConstraintVar("T")]
 
     operand: Operand = operand_def(T)
-    result: OpResult = result_def(T)
+    result = result_def(T)
     attribute: T = attr_def(T)
 
 
@@ -319,9 +318,9 @@ class OpResultOp(IRDLOperation):
 
     irdl_options = [AttrSizedResultSegments()]
 
-    result: OpResult = result_def()
+    result = result_def()
     opt_result: OptOpResult = opt_result_def()
-    var_result: VarOpResult = var_result_def()
+    var_result = var_result_def()
 
 
 def test_opresult_accessors():
@@ -544,7 +543,7 @@ class GenericOp(Generic[_Attr, _Operand, _Result], IRDLOperation):
 
     attr: _Attr = attr_def(_Attr)
     operand: Operand = operand_def(_Operand)
-    result: OpResult = result_def(Annotated[FooType | BarType, _Result])
+    result = result_def(Annotated[FooType | BarType, _Result])
 
 
 @irdl_op_definition

@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from typing import Annotated
 
 from xdsl.dialects.builtin import IntegerAttr, IntegerType, UnitAttr, i32, i64
-from xdsl.ir import Attribute, Dialect, Operation, OpResult, SSAValue
+from xdsl.ir import Attribute, Dialect, Operation, SSAValue
 from xdsl.irdl import (
     ConstraintVar,
     IRDLOperation,
@@ -52,7 +52,7 @@ class BinCombOperation(IRDLOperation, ABC):
 
     lhs: Operand = operand_def(T)
     rhs: Operand = operand_def(T)
-    result: OpResult = result_def(T)
+    result = result_def(T)
     """
     "All operations are defined in the expected way for 2-state (binary) logic. However, comb is
     used for operations which have extended truth table for non-2-state logic for various target
@@ -98,7 +98,7 @@ class VariadicCombOperation(IRDLOperation, ABC):
     T = Annotated[IntegerType, ConstraintVar("T")]
 
     inputs: VarOperand = var_operand_def(T)
-    result: OpResult = result_def(T)
+    result = result_def(T)
     """
     "All operations are defined in the expected way for 2-state (binary) logic. However, comb is
     used for operations which have extended truth table for non-2-state logic for various target
@@ -253,7 +253,7 @@ class ICmpOp(IRDLOperation, ABC):
     )
     lhs: Operand = operand_def(T)
     rhs: Operand = operand_def(T)
-    result: OpResult = result_def(Annotated[IntegerType, IntegerType(1)])
+    result = result_def(Annotated[IntegerType, IntegerType(1)])
 
     two_state: UnitAttr = attr_def(UnitAttr)
 
@@ -330,7 +330,7 @@ class ParityOp(IRDLOperation):
     name = "comb.parity"
 
     input: Operand = operand_def(IntegerType)
-    result: OpResult = result_def(Annotated[IntegerType, IntegerType(1)])
+    result = result_def(Annotated[IntegerType, IntegerType(1)])
 
     two_state: UnitAttr | None = opt_attr_def(UnitAttr)
 
@@ -372,7 +372,7 @@ class ExtractOp(IRDLOperation):
     low_bit: IntegerAttr[Annotated[IntegerType, i32]] = attr_def(
         IntegerAttr[Annotated[IntegerType, i32]]
     )
-    result: OpResult = result_def(IntegerType)
+    result = result_def(IntegerType)
 
     def __init__(
         self, operand: Operation | SSAValue, low_bit: IntegerAttr[IntegerType]
@@ -410,7 +410,7 @@ class ConcatOp(IRDLOperation):
     name = "comb.concat"
 
     inputs: VarOperand = var_operand_def(IntegerType)
-    result: OpResult = result_def(IntegerType)
+    result = result_def(IntegerType)
 
     def __init__(self, op: SSAValue | Operation, target_type: IntegerType):
         return super().__init__(operands=[op], result_types=[target_type])
@@ -443,7 +443,7 @@ class ReplicateOp(IRDLOperation):
     name = "comb.replicate"
 
     input: Operand = operand_def(IntegerType)
-    result: OpResult = result_def(IntegerType)
+    result = result_def(IntegerType)
 
     def __init__(self, op: SSAValue | Operation, target_type: IntegerType):
         return super().__init__(operands=[op], result_types=[target_type])
@@ -476,7 +476,7 @@ class MuxOp(IRDLOperation):
     cond: Operand = operand_def(IntegerType(1))
     true_value: Operand = operand_def(T)
     false_value: Operand = operand_def(T)
-    result: OpResult = result_def(T)
+    result = result_def(T)
 
     def __init__(
         self,

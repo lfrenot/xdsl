@@ -15,7 +15,6 @@ from xdsl.ir import (
 from xdsl.irdl import (
     IRDLOperation,
     VarOperand,
-    VarOpResult,
     VarRegion,
     VarSuccessor,
     irdl_attr_definition,
@@ -42,7 +41,7 @@ class TestOp(IRDLOperation):
 
     name = "test.op"
 
-    res: VarOpResult = var_result_def()
+    res = var_result_def()
     ops: VarOperand = var_operand_def()
     regs: VarRegion = var_region_def()
 
@@ -80,7 +79,7 @@ class TestTermOp(IRDLOperation):
 
     name = "test.termop"
 
-    res: VarOpResult = var_result_def()
+    res = var_result_def()
     ops: VarOperand = var_operand_def()
     regs: VarRegion = var_region_def()
     successor: VarSuccessor = var_successor_def()

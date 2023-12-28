@@ -28,7 +28,6 @@ from xdsl.ir import (
     Attribute,
     Dialect,
     Operation,
-    OpResult,
     ParametrizedAttribute,
     SSAValue,
     TypeAttribute,
@@ -191,7 +190,7 @@ class Load(IRDLOperation):
     name = "memref.load"
     memref: Operand = operand_def(MemRefType[Attribute])
     indices: VarOperand = var_operand_def(IndexType)
-    res: OpResult = result_def()
+    res = result_def()
 
     # TODO varargs for indexing, which must match the memref dimensions
     # Problem: memref dimensions require variadic type parameters,
@@ -314,7 +313,7 @@ class Alloc(IRDLOperation):
     dynamic_sizes: VarOperand = var_operand_def(IndexType)
     symbol_operands: VarOperand = var_operand_def(IndexType)
 
-    memref: OpResult = result_def(MemRefType[Attribute])
+    memref = result_def(MemRefType[Attribute])
 
     # TODO how to constraint the IntegerAttr type?
     alignment: AnyIntegerAttr | None = opt_prop_def(AnyIntegerAttr)
@@ -349,9 +348,6 @@ class Alloc(IRDLOperation):
 
     def verify_(self) -> None:
         memref_type = self.memref.type
-        if not isinstance(memref_type, MemRefType):
-            raise VerifyException("expected result to be a memref")
-        memref_type = cast(MemRefType[Attribute], memref_type)
 
         dyn_dims = [x for x in memref_type.shape.data if x.data == -1]
         if len(dyn_dims) != len(self.dynamic_sizes):
@@ -392,7 +388,7 @@ class Alloca(IRDLOperation):
     dynamic_sizes: VarOperand = var_operand_def(IndexType)
     symbol_operands: VarOperand = var_operand_def(IndexType)
 
-    memref: OpResult = result_def(MemRefType[Attribute])
+    memref = result_def(MemRefType[Attribute])
 
     # TODO how to constraint the IntegerAttr type?
     alignment: AnyIntegerAttr | None = opt_prop_def(AnyIntegerAttr)
@@ -427,9 +423,6 @@ class Alloca(IRDLOperation):
 
     def verify_(self) -> None:
         memref_type = self.memref.type
-        if not isinstance(memref_type, MemRefType):
-            raise VerifyException("expected result to be a memref")
-        memref_type = cast(MemRefType[Attribute], memref_type)
 
         dyn_dims = [x for x in memref_type.shape.data if x.data == -1]
         if len(dyn_dims) != len(self.dynamic_sizes):
@@ -451,7 +444,7 @@ class Dealloc(IRDLOperation):
 @irdl_op_definition
 class GetGlobal(IRDLOperation):
     name = "memref.get_global"
-    memref: OpResult = result_def(MemRefType[Attribute])
+    memref = result_def(MemRefType[Attribute])
     name_: SymbolRefAttr = prop_def(SymbolRefAttr, prop_name="name")
 
     @staticmethod
@@ -509,7 +502,7 @@ class Dim(IRDLOperation):
     source: Operand = operand_def(MemRefType[Attribute] | UnrankedMemrefType[Attribute])
     index: Operand = operand_def(IndexType)
 
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     @staticmethod
     def from_source_and_index(
@@ -524,7 +517,7 @@ class Rank(IRDLOperation):
 
     source: Operand = operand_def(MemRefType[Attribute])
 
-    rank: OpResult = result_def(IndexType)
+    rank = result_def(IndexType)
 
     @staticmethod
     def from_memref(memref: Operation | SSAValue):
@@ -537,7 +530,7 @@ class ExtractAlignedPointerAsIndexOp(IRDLOperation):
 
     source: Operand = operand_def(MemRefType)
 
-    aligned_pointer: OpResult = result_def(IndexType)
+    aligned_pointer = result_def(IndexType)
 
     @staticmethod
     def get(source: SSAValue | Operation):
@@ -567,7 +560,7 @@ class Subview(IRDLOperation):
     static_offsets: DenseArrayBase = prop_def(DenseArrayBase)
     static_sizes: DenseArrayBase = prop_def(DenseArrayBase)
     static_strides: DenseArrayBase = prop_def(DenseArrayBase)
-    result: OpResult = result_def(MemRefType)
+    result = result_def(MemRefType)
 
     irdl_options = [AttrSizedOperandSegments(as_property=True)]
 
@@ -641,7 +634,7 @@ class Cast(IRDLOperation):
     name = "memref.cast"
 
     source: Operand = operand_def(MemRefType[Attribute] | UnrankedMemrefType[Attribute])
-    dest: OpResult = result_def(MemRefType[Attribute] | UnrankedMemrefType[Attribute])
+    dest = result_def(MemRefType[Attribute] | UnrankedMemrefType[Attribute])
 
     @staticmethod
     def get(

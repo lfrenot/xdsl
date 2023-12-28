@@ -29,7 +29,6 @@ from xdsl.irdl import (
     AnyAttr,
     IRDLOperation,
     VarOperand,
-    VarOpResult,
     irdl_op_definition,
     opt_prop_def,
     prop_def,
@@ -248,7 +247,7 @@ class Call(IRDLOperation):
     callee: FlatSymbolRefAttr = prop_def(FlatSymbolRefAttr)
 
     # Note: naming this results triggers an ArgumentError
-    res: VarOpResult = var_result_def()
+    res = var_result_def()
 
     # TODO how do we verify that the types are correct?
     def __init__(

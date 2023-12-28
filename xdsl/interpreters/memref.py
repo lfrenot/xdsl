@@ -11,7 +11,6 @@ from xdsl.interpreter import (
     register_impls,
 )
 from xdsl.interpreters.shaped_array import ShapedArray
-from xdsl.ir import Attribute
 from xdsl.traits import SymbolTable
 from xdsl.utils.exceptions import InterpretationError
 
@@ -33,7 +32,7 @@ class MemrefFunctions(InterpreterFunctions):
     def run_alloc(
         self, interpreter: Interpreter, op: memref.Alloc, args: PythonValues
     ) -> PythonValues:
-        memref_type = cast(memref.MemRefType[Attribute], op.memref.type)
+        memref_type = op.memref.type
 
         shape = memref_type.get_shape()
         size = prod(shape)

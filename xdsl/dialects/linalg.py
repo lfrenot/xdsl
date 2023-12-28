@@ -23,7 +23,6 @@ from xdsl.irdl import (
     AttrSizedOperandSegments,
     IRDLOperation,
     VarOperand,
-    VarOpResult,
     irdl_attr_definition,
     irdl_op_definition,
     opt_attr_def,
@@ -91,7 +90,7 @@ class Generic(IRDLOperation):
     inputs: VarOperand = var_operand_def()
     outputs: VarOperand = var_operand_def(AnyShapedType())
 
-    res: VarOpResult = var_result_def(AnyTensorType)
+    res = var_result_def(AnyTensorType)
 
     body: Region = region_def("single_block")
 

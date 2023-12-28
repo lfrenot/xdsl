@@ -7,7 +7,7 @@ from xdsl.dialects.builtin import (
     ParametrizedAttribute,
     StringAttr,
 )
-from xdsl.ir import Dialect, Operation, OpResult, Region, SSAValue, TypeAttribute
+from xdsl.ir import Dialect, Operation, Region, SSAValue, TypeAttribute
 from xdsl.irdl import (
     AnyAttr,
     IRDLOperation,
@@ -102,9 +102,7 @@ class HLSStreamType(ParametrizedAttribute, TypeAttribute):
 class HLSStream(IRDLOperation):
     name = "hls.stream"
     elem_type: Attribute = attr_def(Attribute)
-    result: OpResult = result_def(
-        HLSStreamType
-    )  # This should be changed to HLSStreamType
+    result = result_def(HLSStreamType)  # This should be changed to HLSStreamType
 
     @staticmethod
     def get(elem_type: Attribute) -> HLSStream:
@@ -130,7 +128,7 @@ class HLSStreamWrite(IRDLOperation):
 class HLSStreamRead(IRDLOperation):
     name = "hls.read"
     stream: Operand = operand_def(HLSStreamType)
-    res: OpResult = result_def()
+    res = result_def()
 
     def __init__(self, stream: SSAValue):
         assert isinstance(stream.type, HLSStreamType)
@@ -145,7 +143,7 @@ class HLSExtractStencilValue(IRDLOperation):
     position: DenseArrayBase = attr_def(DenseArrayBase)
     container: Operand = operand_def(Attribute)
 
-    res: OpResult = result_def(Attribute)
+    res = result_def(Attribute)
 
     def __init__(
         self,

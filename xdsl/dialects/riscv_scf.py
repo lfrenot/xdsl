@@ -22,7 +22,6 @@ from xdsl.irdl import (
     Region,
     SSAValue,
     VarOperand,
-    VarOpResult,
     irdl_op_definition,
     operand_def,
     region_def,
@@ -53,7 +52,7 @@ class ForOp(IRDLOperation):
 
     iter_args: VarOperand = var_operand_def(RISCVRegisterType)
 
-    res: VarOpResult = var_result_def(RISCVRegisterType)
+    res = var_result_def(RISCVRegisterType)
 
     body: Region = region_def("single_block")
 
@@ -193,7 +192,7 @@ class WhileOp(IRDLOperation):
     name = "riscv_scf.while"
     arguments: VarOperand = var_operand_def(RISCVRegisterType)
 
-    res: VarOpResult = var_result_def(RISCVRegisterType)
+    res = var_result_def(RISCVRegisterType)
     before_region: Region = region_def()
     after_region: Region = region_def()
 

@@ -5,7 +5,7 @@ import pytest
 from xdsl.dialects.arith import Constant
 from xdsl.dialects.builtin import DenseArrayBase, StringAttr, i32
 from xdsl.dialects.test import TestTermOp
-from xdsl.ir import Block, OpResult, Region
+from xdsl.ir import Block, Region
 from xdsl.irdl import (
     AttrSizedOperandSegments,
     AttrSizedRegionSegments,
@@ -19,7 +19,6 @@ from xdsl.irdl import (
     OptSuccessor,
     Successor,
     VarOperand,
-    VarOpResult,
     VarRegion,
     VarSuccessor,
     attr_def,
@@ -51,7 +50,7 @@ from xdsl.traits import IsTerminator
 class ResultOp(IRDLOperation):
     name = "test.result_op"
 
-    res: OpResult = result_def(StringAttr)
+    res = result_def(StringAttr)
 
 
 def test_result_builder():
@@ -93,7 +92,7 @@ def test_opt_result_builder_two_args():
 class VarResultOp(IRDLOperation):
     name = "test.var_result_op"
 
-    res: VarOpResult = var_result_def(StringAttr)
+    res = var_result_def(StringAttr)
 
 
 def test_var_result_builder():
@@ -109,8 +108,8 @@ def test_var_result_builder():
 class TwoVarResultOp(IRDLOperation):
     name = "test.two_var_result_op"
 
-    res1: VarOpResult = var_result_def(StringAttr)
-    res2: VarOpResult = var_result_def(StringAttr)
+    res1 = var_result_def(StringAttr)
+    res2 = var_result_def(StringAttr)
     irdl_options = [AttrSizedResultSegments()]
 
 
@@ -157,9 +156,9 @@ def test_two_var_result_builder2():
 class MixedResultOp(IRDLOperation):
     name = "test.mixed"
 
-    res1: VarOpResult = var_result_def(StringAttr)
-    res2: OpResult = result_def(StringAttr)
-    res3: VarOpResult = var_result_def(StringAttr)
+    res1 = var_result_def(StringAttr)
+    res2 = result_def(StringAttr)
+    res3 = var_result_def(StringAttr)
     irdl_options = [AttrSizedResultSegments()]
 
 

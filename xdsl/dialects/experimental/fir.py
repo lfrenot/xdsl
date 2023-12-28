@@ -11,7 +11,7 @@ from xdsl.dialects.builtin import (
     TupleType,
     UnitAttr,
 )
-from xdsl.ir import Attribute, Dialect, OpResult, ParametrizedAttribute, TypeAttribute
+from xdsl.ir import Attribute, Dialect, ParametrizedAttribute, TypeAttribute
 from xdsl.irdl import (
     AttrSizedOperandSegments,
     IRDLOperation,
@@ -20,7 +20,6 @@ from xdsl.irdl import (
     OptOpResult,
     ParameterDef,
     VarOperand,
-    VarOpResult,
     VarRegion,
     attr_def,
     irdl_attr_definition,
@@ -367,7 +366,7 @@ class Absent(IRDLOperation):
     """
 
     name = "fir.absent"
-    intype: OpResult = result_def()
+    intype = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -376,7 +375,7 @@ class Addc(IRDLOperation):
     name = "fir.addc"
     lhs: Operand = operand_def()
     rhs: Operand = operand_def()
-    result: OpResult = result_def()
+    result = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -392,7 +391,7 @@ class AddressOf(IRDLOperation):
 
     name = "fir.address_of"
     symbol: SymbolRefAttr = attr_def(SymbolRefAttr)
-    resTy: OpResult = result_def()
+    resTy = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -414,7 +413,7 @@ class Allocmem(IRDLOperation):
     typeparams: VarOperand = var_operand_def()
     shape: VarOperand = var_operand_def()
 
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
     irdl_options = [AttrSizedOperandSegments()]
@@ -487,7 +486,7 @@ class Alloca(IRDLOperation):
     bindc_name: StringAttr | None = opt_attr_def(StringAttr)
     typeparams: VarOperand = var_operand_def()
     shape: VarOperand = var_operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
     valuebyref: UnitAttr | None = opt_attr_def(UnitAttr)
 
@@ -538,7 +537,7 @@ class ArrayAccess(IRDLOperation):
     sequence: Operand = operand_def()
     indices: Operand = operand_def()
     typeparams: Operand = operand_def()
-    element: OpResult = result_def()
+    element = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -564,7 +563,7 @@ class ArrayAmend(IRDLOperation):
     name = "fir.array_amend"
     sequence: Operand = operand_def()
     memref: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -594,7 +593,7 @@ class ArrayCoor(IRDLOperation):
     slice: Operand = operand_def()
     indices: Operand = operand_def()
     typeparams: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -625,7 +624,7 @@ class ArrayFetch(IRDLOperation):
     sequence: Operand = operand_def()
     indices: Operand = operand_def()
     typeparams: Operand = operand_def()
-    element: OpResult = result_def()
+    element = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -666,7 +665,7 @@ class ArrayLoad(IRDLOperation):
     shape: Operand = operand_def()
     slice: Operand = operand_def()
     typeparams: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -734,8 +733,8 @@ class ArrayModify(IRDLOperation):
     sequence: Operand = operand_def()
     indices: Operand = operand_def()
     typeparams: Operand = operand_def()
-    result_0: OpResult = result_def()
-    result_1: OpResult = result_def()
+    result_0 = result_def()
+    result_1 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -772,7 +771,7 @@ class ArrayUpdate(IRDLOperation):
     merge: Operand = operand_def()
     indices: Operand = operand_def()
     typeparams: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -791,7 +790,7 @@ class BoxAddr(IRDLOperation):
 
     name = "fir.box_addr"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -806,7 +805,7 @@ class BoxcharLen(IRDLOperation):
 
     name = "fir.boxchar_len"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -829,9 +828,9 @@ class BoxDims(IRDLOperation):
     name = "fir.box_dims"
     val: Operand = operand_def()
     dim: Operand = operand_def()
-    result_0: OpResult = result_def()
-    result_1: OpResult = result_def()
-    result_2: OpResult = result_def()
+    result_0 = result_def()
+    result_1 = result_def()
+    result_2 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -850,7 +849,7 @@ class BoxElesize(IRDLOperation):
 
     name = "fir.box_elesize"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -871,7 +870,7 @@ class BoxIsalloc(IRDLOperation):
 
     name = "fir.box_isalloc"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -891,7 +890,7 @@ class BoxIsarray(IRDLOperation):
 
     name = "fir.box_isarray"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -907,7 +906,7 @@ class BoxIsptr(IRDLOperation):
 
     name = "fir.box_isptr"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -927,7 +926,7 @@ class BoxprocHost(IRDLOperation):
 
     name = "fir.boxproc_host"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -947,7 +946,7 @@ class BoxRank(IRDLOperation):
 
     name = "fir.box_rank"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -963,7 +962,7 @@ class BoxTdesc(IRDLOperation):
 
     name = "fir.box_tdesc"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1020,7 +1019,7 @@ class Cmpc(IRDLOperation):
     name = "fir.cmpc"
     lhs: Operand = operand_def()
     rhs: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1033,7 +1032,7 @@ class Constc(IRDLOperation):
     """
 
     name = "fir.constc"
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1053,7 +1052,7 @@ class Convert(IRDLOperation):
 
     name = "fir.convert"
     value: Operand = operand_def()
-    res: OpResult = result_def()
+    res = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1082,7 +1081,7 @@ class CoordinateOf(IRDLOperation):
     baseType: Attribute = attr_def(Attribute)
     ref: Operand = operand_def()
     coor: VarOperand = var_operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1121,7 +1120,7 @@ class Dispatch(IRDLOperation):
     pass_arg_pos: AnyIntegerAttr | None = opt_attr_def(AnyIntegerAttr)
     object: Operand = operand_def()
     args: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1154,7 +1153,7 @@ class Divc(IRDLOperation):
     name = "fir.divc"
     lhs: Operand = operand_def()
     rhs: Operand = operand_def()
-    result: OpResult = result_def()
+    result = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1184,7 +1183,7 @@ class DoLoop(IRDLOperation):
     step: Operand = operand_def()
     finalValue: Attribute | None = opt_attr_def(Attribute)
     initArgs: Operand = operand_def()
-    _results: VarOpResult = var_result_def()
+    _results = var_result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1209,7 +1208,7 @@ class Emboxchar(IRDLOperation):
     name = "fir.emboxchar"
     memref: Operand = operand_def()
     len: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1242,7 +1241,7 @@ class Embox(IRDLOperation):
     slice: VarOperand = var_operand_def()
     typeparams: VarOperand = var_operand_def()
     sourceBox: VarOperand = var_operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
     irdl_options = [AttrSizedOperandSegments()]
@@ -1273,7 +1272,7 @@ class Emboxproc(IRDLOperation):
     name = "fir.emboxproc"
     func: Operand = operand_def()
     host: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1296,7 +1295,7 @@ class ExtractValue(IRDLOperation):
 
     name = "fir.extract_value"
     adt: Operand = operand_def()
-    res: OpResult = result_def()
+    res = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1315,7 +1314,7 @@ class FieldIndex(IRDLOperation):
 
     name = "fir.field_index"
     typeparams: Operand = operand_def()
-    res: OpResult = result_def()
+    res = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1363,7 +1362,7 @@ class Gentypedesc(IRDLOperation):
     """
 
     name = "fir.gentypedesc"
-    res: OpResult = result_def()
+    res = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1484,7 +1483,7 @@ class InsertOnRange(IRDLOperation):
     name = "fir.insert_on_range"
     seq: Operand = operand_def()
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1510,7 +1509,7 @@ class InsertValue(IRDLOperation):
     name = "fir.insert_value"
     adt: Operand = operand_def()
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1527,7 +1526,7 @@ class IsPresent(IRDLOperation):
 
     name = "fir.is_present"
     val: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1564,7 +1563,7 @@ class IterateWhile(IRDLOperation):
     step: Operand = operand_def()
     iterateIn: Operand = operand_def()
     initArgs: Operand = operand_def()
-    _results: OpResult = result_def()
+    _results = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1583,7 +1582,7 @@ class LenParamIndex(IRDLOperation):
 
     name = "fir.len_param_index"
     typeparams: Operand = operand_def()
-    res: OpResult = result_def()
+    res = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1603,7 +1602,7 @@ class Load(IRDLOperation):
 
     name = "fir.load"
     memref: Operand = operand_def()
-    res: OpResult = result_def()
+    res = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1612,7 +1611,7 @@ class Mulc(IRDLOperation):
     name = "fir.mulc"
     lhs: Operand = operand_def()
     rhs: Operand = operand_def()
-    result: OpResult = result_def()
+    result = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1620,7 +1619,7 @@ class Mulc(IRDLOperation):
 class Negc(IRDLOperation):
     name = "fir.negc"
     operand: Operand = operand_def()
-    result: OpResult = result_def()
+    result = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1642,7 +1641,7 @@ class NoReassoc(IRDLOperation):
 
     name = "fir.no_reassoc"
     val: Operand = operand_def()
-    res: OpResult = result_def()
+    res = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1682,7 +1681,7 @@ class Rebox(IRDLOperation):
     box: Operand = operand_def()
     shape: Operand = operand_def()
     slice: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1847,7 +1846,7 @@ class Shape(IRDLOperation):
 
     name = "fir.shape"
     extents: VarOperand = var_operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
 
 
 @irdl_op_definition
@@ -1865,7 +1864,7 @@ class ShapeShift(IRDLOperation):
 
     name = "fir.shape_shift"
     pairs: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1883,7 +1882,7 @@ class Shift(IRDLOperation):
 
     name = "fir.shift"
     origins: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1919,7 +1918,7 @@ class Slice(IRDLOperation):
     triples: Operand = operand_def()
     fields: Operand = operand_def()
     substr: Operand = operand_def()
-    result_0: OpResult = result_def()
+    result_0 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1959,7 +1958,7 @@ class StringLit(IRDLOperation):
     name = "fir.string_lit"
     size: IntegerAttr[IntegerType] = attr_def(IntegerAttr[IntegerType])
     value: StringAttr = attr_def(StringAttr)
-    result_0: OpResult = result_def()
+    result_0 = result_def()
 
 
 @irdl_op_definition
@@ -1967,7 +1966,7 @@ class Subc(IRDLOperation):
     name = "fir.subc"
     lhs: Operand = operand_def()
     rhs: Operand = operand_def()
-    result: OpResult = result_def()
+    result = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -1983,8 +1982,8 @@ class Unboxchar(IRDLOperation):
 
     name = "fir.unboxchar"
     boxchar: Operand = operand_def()
-    result_0: OpResult = result_def()
-    result_1: OpResult = result_def()
+    result_0 = result_def()
+    result_1 = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -2000,8 +1999,8 @@ class Unboxproc(IRDLOperation):
 
     name = "fir.unboxproc"
     boxproc: Operand = operand_def()
-    result_0: OpResult = result_def()
-    refTuple: OpResult = result_def()
+    result_0 = result_def()
+    refTuple = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -2019,7 +2018,7 @@ class Undefined(IRDLOperation):
     """
 
     name = "fir.undefined"
-    intype: OpResult = result_def()
+    intype = result_def()
     regs: VarRegion = var_region_def()
 
 
@@ -2051,7 +2050,7 @@ class ZeroBits(IRDLOperation):
     """
 
     name = "fir.zero_bits"
-    intype: OpResult = result_def()
+    intype = result_def()
     regs: VarRegion = var_region_def()
 
 

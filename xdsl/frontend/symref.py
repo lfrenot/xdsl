@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from xdsl.dialects.builtin import StringAttr, SymbolRefAttr
-from xdsl.ir import Attribute, Dialect, Operation, OpResult, SSAValue
+from xdsl.ir import Attribute, Dialect, Operation, SSAValue
 from xdsl.irdl import (
     AnyAttr,
     IRDLOperation,
@@ -28,7 +28,7 @@ class Declare(IRDLOperation):
 @irdl_op_definition
 class Fetch(IRDLOperation):
     name = "symref.fetch"
-    value: OpResult = result_def()
+    value = result_def()
     symbol: SymbolRefAttr = attr_def(SymbolRefAttr)
 
     @staticmethod

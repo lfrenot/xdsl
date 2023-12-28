@@ -24,7 +24,6 @@ from xdsl.irdl import (
     Operand,
     OptOperand,
     VarOperand,
-    VarOpResult,
     attr_def,
     irdl_op_definition,
     operand_def,
@@ -77,7 +76,7 @@ class ConstantOp(IRDLOperation):
 
     name = "toy.constant"
     value: DenseIntOrFPElementsAttr = attr_def(DenseIntOrFPElementsAttr)
-    res: OpResult = result_def(TensorTypeF64)
+    res = result_def(TensorTypeF64)
 
     traits = frozenset((Pure(),))
 
@@ -125,6 +124,7 @@ class InferAddOpShapeTrait(ToyShapeInferenceTrait):
         if isinstance(op_res_type := op.res.type, TensorType):
             assert op_lhs_type.get_shape() == op_res_type.get_shape()
         else:
+            assert isa(op.lhs.type, AnyTensorTypeF64)
             op.res.type = op.lhs.type
 
 
@@ -138,7 +138,7 @@ class AddOp(IRDLOperation):
     name = "toy.add"
     lhs: Operand = operand_def(AnyTensorTypeF64)
     rhs: Operand = operand_def(AnyTensorTypeF64)
-    res: OpResult = result_def(AnyTensorTypeF64)
+    res = result_def(AnyTensorTypeF64)
 
     traits = frozenset((Pure(), InferAddOpShapeTrait()))
 
@@ -260,7 +260,7 @@ class GenericCallOp(IRDLOperation):
     callee: SymbolRefAttr = attr_def(SymbolRefAttr)
 
     # Note: naming this results triggers an ArgumentError
-    res: VarOpResult = var_result_def(AnyTensorTypeF64)
+    res = var_result_def(AnyTensorTypeF64)
 
     def __init__(
         self,
@@ -294,6 +294,7 @@ class InferMulOpShapeTrait(ToyShapeInferenceTrait):
         if isinstance(op_res_type := op.res.type, TensorType):
             assert op_lhs_type.get_shape() == op_res_type.get_shape()
         else:
+            assert isa(op.lhs.type, AnyTensorTypeF64)
             op.res.type = op.lhs.type
 
 
@@ -307,7 +308,7 @@ class MulOp(IRDLOperation):
     name = "toy.mul"
     lhs: Operand = operand_def(AnyTensorTypeF64)
     rhs: Operand = operand_def(AnyTensorTypeF64)
-    res: OpResult = result_def(AnyTensorTypeF64)
+    res = result_def(AnyTensorTypeF64)
 
     traits = frozenset((Pure(), InferMulOpShapeTrait()))
 
@@ -398,7 +399,7 @@ class ReshapeOp(IRDLOperation):
     name = "toy.reshape"
     arg: Operand = operand_def(AnyTensorTypeF64)
     # We expect that the reshape operation returns a statically shaped tensor.
-    res: OpResult = result_def(TensorTypeF64)
+    res = result_def(TensorTypeF64)
 
     traits = frozenset((Pure(), ReshapeOpHasCanonicalisationPatternsTrait()))
 
@@ -458,7 +459,7 @@ class TransposeOpHasCanonicalisationPatternsTrait(HasCanonicalisationPatternsTra
 class TransposeOp(IRDLOperation):
     name = "toy.transpose"
     arg: Operand = operand_def(AnyTensorTypeF64)
-    res: OpResult = result_def(AnyTensorTypeF64)
+    res = result_def(AnyTensorTypeF64)
 
     traits = frozenset(
         (
@@ -505,7 +506,7 @@ class InferCastOpShapeTrait(ToyShapeInferenceTrait):
 class CastOp(IRDLOperation):
     name = "toy.cast"
     arg: Operand = operand_def(AnyTensorTypeF64)
-    res: OpResult = result_def(AnyTensorTypeF64)
+    res = result_def(AnyTensorTypeF64)
 
     traits = frozenset((Pure(), InferCastOpShapeTrait()))
 

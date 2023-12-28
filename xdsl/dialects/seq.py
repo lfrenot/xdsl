@@ -10,7 +10,7 @@ from xdsl.dialects.builtin import (
     IntegerType,
     TypeAttribute,
 )
-from xdsl.ir import Dialect, Operation, OpResult, SSAValue
+from xdsl.ir import Dialect, Operation, SSAValue
 from xdsl.irdl import (
     IRDLOperation,
     Operand,
@@ -46,7 +46,7 @@ class ClockDivider(IRDLOperation):
 
     pow2 = attr_def(AnyIntegerAttr)
     clockIn: Operand = operand_def(ClockType)
-    clockOut: OpResult = result_def(ClockType)
+    clockOut = result_def(ClockType)
 
     def __init__(self, clockIn: SSAValue | Operation, pow2: int | AnyIntegerAttr):
         if isinstance(pow2, int):

@@ -13,7 +13,7 @@ from xdsl.dialects.builtin import (
     i1,
 )
 from xdsl.dialects.memref import MemRefType
-from xdsl.ir import Attribute, Dialect, Operation, OpResult, SSAValue
+from xdsl.ir import Attribute, Dialect, Operation, SSAValue
 from xdsl.irdl import (
     AnyAttr,
     IRDLOperation,
@@ -33,7 +33,7 @@ class Load(IRDLOperation):
     name = "vector.load"
     memref: Operand = operand_def(MemRefType)
     indices: VarOperand = var_operand_def(IndexType)
-    res: OpResult = result_def(VectorType)
+    res = result_def(VectorType)
 
     def verify_(self):
         assert isa(self.memref.type, MemRefType[Attribute])
@@ -90,7 +90,7 @@ class Store(IRDLOperation):
 class Broadcast(IRDLOperation):
     name = "vector.broadcast"
     source: Operand = operand_def(AnyAttr())
-    vector: OpResult = result_def(VectorType)
+    vector = result_def(VectorType)
 
     def verify_(self):
         assert isa(self.vector.type, VectorType[Attribute])
@@ -114,7 +114,7 @@ class FMA(IRDLOperation):
     lhs: Operand = operand_def(VectorType)
     rhs: Operand = operand_def(VectorType)
     acc: Operand = operand_def(VectorType)
-    res: OpResult = result_def(VectorType)
+    res = result_def(VectorType)
 
     def verify_(self):
         assert isa(self.lhs.type, VectorType[Attribute])
@@ -173,7 +173,7 @@ class Maskedload(IRDLOperation):
     indices: VarOperand = var_operand_def(IndexType)
     mask: Operand = operand_def(VectorBaseTypeAndRankConstraint(i1, 1))
     passthrough: Operand = operand_def(VectorType)
-    res: OpResult = result_def(Annotated[AnyVectorType, VectorRankConstraint(1)])
+    res = result_def(Annotated[AnyVectorType, VectorRankConstraint(1)])
 
     def verify_(self):
         memref_type = self.memref.type
@@ -274,9 +274,7 @@ class Print(IRDLOperation):
 class Createmask(IRDLOperation):
     name = "vector.create_mask"
     mask_operands: VarOperand = var_operand_def(IndexType)
-    mask_vector: OpResult = result_def(
-        Annotated[AnyVectorType, VectorBaseTypeConstraint(i1)]
-    )
+    mask_vector = result_def(Annotated[AnyVectorType, VectorBaseTypeConstraint(i1)])
 
     def verify_(self):
         assert isa(self.mask_vector.type, VectorType[Attribute])

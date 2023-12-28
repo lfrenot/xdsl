@@ -8,7 +8,6 @@ from xdsl.dialects.builtin import (
 from xdsl.ir import (
     Attribute,
     Dialect,
-    OpResult,
     ParametrizedAttribute,
     SSAValue,
     TypeAttribute,
@@ -61,7 +60,7 @@ class ReadOp(IRDLOperation):
     T = Annotated[Attribute, ConstraintVar("T")]
 
     stream: Operand = operand_def(ReadableStreamType[T])
-    res: OpResult = result_def(T)
+    res = result_def(T)
 
     def __init__(self, stream: SSAValue, result_type: Attribute | None = None):
         if result_type is None:

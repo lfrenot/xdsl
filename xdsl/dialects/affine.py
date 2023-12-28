@@ -20,7 +20,6 @@ from xdsl.irdl import (
     ConstraintVar,
     IRDLOperation,
     VarOperand,
-    VarOpResult,
     irdl_op_definition,
     operand_def,
     opt_prop_def,
@@ -56,7 +55,7 @@ class For(IRDLOperation):
     name = "affine.for"
 
     arguments: VarOperand = var_operand_def(AnyAttr())
-    res: VarOpResult = var_result_def(Attribute)
+    res = var_result_def(Attribute)
 
     lower_bound = prop_def(AffineMapAttr)
     upper_bound = prop_def(AffineMapAttr)

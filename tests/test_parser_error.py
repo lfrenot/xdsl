@@ -5,7 +5,6 @@ from xdsl.irdl import (
     AnyAttr,
     IRDLOperation,
     VarOperand,
-    VarOpResult,
     irdl_op_definition,
     var_operand_def,
     var_result_def,
@@ -18,7 +17,7 @@ from xdsl.utils.exceptions import ParseError
 class UnkownOp(IRDLOperation):
     name = "unknown"
     ops: VarOperand = var_operand_def(AnyAttr())
-    res: VarOpResult = var_result_def()
+    res = var_result_def()
 
 
 def check_error(prog: str, line: int, column: int, message: str):

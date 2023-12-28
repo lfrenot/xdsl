@@ -12,7 +12,6 @@ from xdsl.ir import (
     Attribute,
     Dialect,
     Operation,
-    OpResult,
     ParametrizedAttribute,
     SSAValue,
     TypeAttribute,
@@ -611,8 +610,8 @@ class Test(MPIBaseOp):
 
     request: Operand = operand_def(RequestType)
 
-    flag: OpResult = result_def(Annotated[IntegerType, IntegerType(1)])
-    status: OpResult = result_def(StatusType)
+    flag = result_def(Annotated[IntegerType, IntegerType(1)])
+    status = result_def(StatusType)
 
     def __init__(self, request: Operand):
         return super().__init__(operands=[request], result_types=[t_bool, StatusType()])
@@ -717,7 +716,7 @@ class GetStatusField(MPIBaseOp):
 
     field: StringAttr = attr_def(StringAttr)
 
-    result: OpResult = result_def(Annotated[IntegerType, IntegerType(32)])
+    result = result_def(Annotated[IntegerType, IntegerType(32)])
 
     def __init__(self, status_obj: Operand, field: StatusTypeField):
         return super().__init__(
@@ -747,7 +746,7 @@ class CommRank(MPIBaseOp):
 
     name = "mpi.comm.rank"
 
-    rank: OpResult = result_def(Annotated[IntegerType, IntegerType(32)])
+    rank = result_def(Annotated[IntegerType, IntegerType(32)])
 
     def __init__(self):
         return super().__init__(result_types=[i32])
@@ -769,7 +768,7 @@ class CommSize(MPIBaseOp):
 
     name = "mpi.comm.size"
 
-    size: OpResult = result_def(Annotated[IntegerType, IntegerType(32)])
+    size = result_def(Annotated[IntegerType, IntegerType(32)])
 
     def __init__(self):
         return super().__init__(result_types=[i32])
@@ -810,9 +809,9 @@ class UnwrapMemrefOp(MPIBaseOp):
 
     ref: Operand = operand_def(MemRefType[AnyNumericType])
 
-    ptr: OpResult = result_def(llvm.LLVMPointerType)
-    len: OpResult = result_def(Annotated[IntegerType, IntegerType(32)])
-    type: OpResult = result_def(DataType)
+    ptr = result_def(llvm.LLVMPointerType)
+    len = result_def(Annotated[IntegerType, IntegerType(32)])
+    type = result_def(DataType)
 
     def __init__(self, ref: SSAValue | Operation):
         return super().__init__(
@@ -846,7 +845,7 @@ class GetDtypeOp(MPIBaseOp):
 
     dtype: Attribute = attr_def(Attribute)
 
-    result: OpResult = result_def(DataType)
+    result = result_def(DataType)
 
     def __init__(self, dtype: Attribute):
         return super().__init__(result_types=[DataType()], attributes={"dtype": dtype})
@@ -875,7 +874,7 @@ class AllocateTypeOp(MPIBaseOp):
     dtype: VectorWrappable = attr_def(VectorWrappable)
     count: Operand = operand_def(i32)
 
-    result: OpResult = result_def(VectorType)
+    result = result_def(VectorType)
 
     def __init__(
         self,
@@ -921,7 +920,7 @@ class VectorGetOp(MPIBaseOp):
     vect: Operand = operand_def(VectorType)
     element: Operand = operand_def(i32)
 
-    result: OpResult = result_def(VectorWrappable)
+    result = result_def(VectorWrappable)
 
     def __init__(self, vect: SSAValue | Operation, element: SSAValue | Operation):
         ssa_val = SSAValue.get(vect)

@@ -20,7 +20,7 @@ from xdsl.dialects.builtin import (
     i32,
     i64,
 )
-from xdsl.ir import Operation, OpResult, OpTrait
+from xdsl.ir import Operation, OpTrait
 from xdsl.irdl import (
     Block,
     IRDLOperation,
@@ -108,7 +108,7 @@ class TestOp(IRDLOperation):
     traits = frozenset([LargerOperandTrait(), BitwidthSumLessThanTrait(64)])
 
     ops: Operand = operand_def(IntegerType)
-    res: OpResult = result_def(IntegerType)
+    res = result_def(IntegerType)
 
 
 def test_has_trait_object():
@@ -237,7 +237,7 @@ class OpWithInterface(IRDLOperation):
     name = "test.op_with_interface"
     traits = frozenset([GetNumResultsTraitForOpWithOneResult()])
 
-    res: OpResult = result_def(IntegerType)
+    res = result_def(IntegerType)
 
 
 def test_interface():

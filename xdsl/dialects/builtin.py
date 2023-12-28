@@ -43,7 +43,6 @@ from xdsl.irdl import (
     ParamAttrConstraint,
     ParameterDef,
     VarOperand,
-    VarOpResult,
     attr_constr_coercion,
     irdl_attr_definition,
     irdl_op_definition,
@@ -1232,7 +1231,7 @@ class UnrealizedConversionCastOp(IRDLOperation):
     name = "builtin.unrealized_conversion_cast"
 
     inputs: VarOperand = var_operand_def()
-    outputs: VarOpResult = var_result_def()
+    outputs = var_result_def()
 
     @staticmethod
     def get(inputs: Sequence[SSAValue | Operation], result_type: Sequence[Attribute]):

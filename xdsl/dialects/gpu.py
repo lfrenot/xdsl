@@ -24,7 +24,6 @@ from xdsl.ir import (
     EnumAttribute,
     OpaqueSyntaxAttribute,
     Operation,
-    OpResult,
     ParametrizedAttribute,
     Region,
     SSAValue,
@@ -160,7 +159,7 @@ class AllocOp(IRDLOperation):
 
     irdl_options = [AttrSizedOperandSegments(as_property=True)]
 
-    result: OpResult = result_def(memref.MemRefType[Attribute])
+    result = result_def(memref.MemRefType[Attribute])
     asyncToken: OptOpResult = opt_result_def(AsyncTokenType)
 
     def verify_(self) -> None:
@@ -204,7 +203,7 @@ class AllReduceOp(IRDLOperation):
     op: AllReduceOpAttr | None = opt_prop_def(AllReduceOpAttr)
     uniform: UnitAttr | None = opt_prop_def(UnitAttr)
     operand: Operand = operand_def(Attribute)
-    result: OpResult = result_def(Attribute)
+    result = result_def(Attribute)
     body: Region = region_def()
 
     traits = frozenset([IsolatedFromAbove()])
@@ -278,7 +277,7 @@ class BarrierOp(IRDLOperation):
 class BlockDimOp(IRDLOperation):
     name = "gpu.block_dim"
     dimension: DimensionAttr = prop_def(DimensionAttr)
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     def __init__(self, dim: DimensionAttr):
         super().__init__(result_types=[IndexType()], properties={"dimension": dim})
@@ -288,7 +287,7 @@ class BlockDimOp(IRDLOperation):
 class BlockIdOp(IRDLOperation):
     name = "gpu.block_id"
     dimension: DimensionAttr = prop_def(DimensionAttr)
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     def __init__(self, dim: DimensionAttr):
         super().__init__(result_types=[IndexType()], properties={"dimension": dim})
@@ -443,7 +442,7 @@ class FuncOp(IRDLOperation):
 class GlobalIdOp(IRDLOperation):
     name = "gpu.global_id"
     dimension: DimensionAttr = prop_def(DimensionAttr)
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     def __init__(self, dim: DimensionAttr):
         super().__init__(result_types=[IndexType()], properties={"dimension": dim})
@@ -453,7 +452,7 @@ class GlobalIdOp(IRDLOperation):
 class GridDimOp(IRDLOperation):
     name = "gpu.grid_dim"
     dimension: DimensionAttr = prop_def(DimensionAttr)
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     def __init__(self, dim: DimensionAttr):
         super().__init__(result_types=[IndexType()], properties={"dimension": dim})
@@ -496,7 +495,7 @@ class HostUnregisterOp(IRDLOperation):
 @irdl_op_definition
 class LaneIdOp(IRDLOperation):
     name = "gpu.lane_id"
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     def __init__(self):
         super().__init__(result_types=[IndexType()])
@@ -659,7 +658,7 @@ class LaunchFuncOp(IRDLOperation):
 @irdl_op_definition
 class NumSubgroupsOp(IRDLOperation):
     name = "gpu.num_subgroups"
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     def __init__(self):
         super().__init__(result_types=[IndexType()])
@@ -689,7 +688,7 @@ class SetDefaultDeviceOp(IRDLOperation):
 @irdl_op_definition
 class SubgroupIdOp(IRDLOperation):
     name = "gpu.subgroup_id"
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     def __init__(self):
         super().__init__(result_types=[IndexType()])
@@ -698,7 +697,7 @@ class SubgroupIdOp(IRDLOperation):
 @irdl_op_definition
 class SubgroupSizeOp(IRDLOperation):
     name = "gpu.subgroup_size"
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     def __init__(self):
         super().__init__(result_types=[IndexType()])
@@ -718,7 +717,7 @@ class TerminatorOp(IRDLOperation):
 class ThreadIdOp(IRDLOperation):
     name = "gpu.thread_id"
     dimension: DimensionAttr = prop_def(DimensionAttr)
-    result: OpResult = result_def(IndexType)
+    result = result_def(IndexType)
 
     def __init__(self, dim: DimensionAttr):
         super().__init__(result_types=[IndexType()], properties={"dimension": dim})

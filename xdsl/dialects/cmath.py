@@ -6,7 +6,6 @@ from xdsl.dialects.builtin import Float32Type, Float64Type
 from xdsl.ir import (
     Dialect,
     Operation,
-    OpResult,
     ParametrizedAttribute,
     SSAValue,
     TypeAttribute,
@@ -38,7 +37,7 @@ class Norm(IRDLOperation):
     op: Operand = operand_def(
         ParamAttrConstraint(ComplexType, [AnyOf([Float32Type, Float64Type])])
     )
-    res: OpResult = result_def(Float32Type | Float64Type)
+    res = result_def(Float32Type | Float64Type)
 
     # TODO replace with trait
     def verify_(self) -> None:
@@ -58,7 +57,7 @@ class Mul(IRDLOperation):
     rhs: Operand = operand_def(
         ParamAttrConstraint(ComplexType, [AnyOf([Float32Type, Float64Type])])
     )
-    result: OpResult = result_def(
+    result = result_def(
         Annotated[
             ComplexType,
             ParamAttrConstraint(ComplexType, [AnyOf([Float32Type, Float64Type])]),

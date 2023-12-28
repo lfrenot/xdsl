@@ -25,7 +25,6 @@ from xdsl.irdl import (
     IRDLOperation,
     OptOpResult,
     VarOperand,
-    VarOpResult,
     attr_def,
     irdl_op_definition,
     opt_attr_def,
@@ -79,7 +78,7 @@ class CallOp(IRDLOperation, riscv.RISCVInstruction):
     name = "riscv_func.call"
     args: VarOperand = var_operand_def(riscv.RISCVRegisterType)
     callee: SymbolRefAttr = attr_def(SymbolRefAttr)
-    ress: VarOpResult = var_result_def(riscv.RISCVRegisterType)
+    ress = var_result_def(riscv.RISCVRegisterType)
 
     def __init__(
         self,

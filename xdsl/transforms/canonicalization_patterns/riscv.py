@@ -12,22 +12,14 @@ from xdsl.pattern_rewriter import (
 class RemoveRedundantMv(RewritePattern):
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: riscv.MVOp, rewriter: PatternRewriter) -> None:
-        if (
-            op.rd.type == op.rs.type
-            and isinstance(op.rd.type, riscv.RISCVRegisterType)
-            and op.rd.type.is_allocated
-        ):
+        if op.rd.type == op.rs.type and op.rd.type.is_allocated:
             rewriter.replace_matched_op([], [op.rs])
 
 
 class RemoveRedundantFMv(RewritePattern):
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: riscv.FMVOp, rewriter: PatternRewriter) -> None:
-        if (
-            op.rd.type == op.rs.type
-            and isinstance(op.rd.type, riscv.RISCVRegisterType)
-            and op.rd.type.is_allocated
-        ):
+        if op.rd.type == op.rs.type and op.rd.type.is_allocated:
             rewriter.replace_matched_op([], [op.rs])
 
 
@@ -117,8 +109,7 @@ class AddImmediateZero(RewritePattern):
     @op_type_rewrite_pattern
     def match_and_rewrite(self, op: riscv.AddiOp, rewriter: PatternRewriter) -> None:
         if isinstance(op.immediate, IntegerAttr) and op.immediate.value.data == 0:
-            rd = cast(riscv.IntRegisterType, op.rd.type)
-            rewriter.replace_matched_op(riscv.MVOp(op.rs1, rd=rd))
+            rewriter.replace_matched_op(riscv.MVOp(op.rs1, rd=op.rd.type))
 
 
 class AddImmediateConstant(RewritePattern):
@@ -129,11 +120,10 @@ class AddImmediateConstant(RewritePattern):
             and isinstance(imm := li.immediate, IntegerAttr)
             and isinstance(op.immediate, IntegerAttr)
         ):
-            rd = cast(riscv.IntRegisterType, op.rd.type)
             rewriter.replace_matched_op(
                 riscv.LiOp(
                     imm.value.data + op.immediate.value.data,
-                    rd=rd,
+                    rd=op.rd.type,
                     comment=op.comment,
                 )
             )
@@ -197,10 +187,10 @@ class ShiftLeftImmediate(RewritePattern):
             and isinstance(op.rs1.owner.immediate, IntegerAttr)
             and isinstance(op.immediate, IntegerAttr)
         ):
-            rd = cast(riscv.IntRegisterType, op.rd.type)
             rewriter.replace_matched_op(
                 riscv.LiOp(
-                    op.rs1.owner.immediate.value.data << op.immediate.value.data, rd=rd
+                    op.rs1.owner.immediate.value.data << op.immediate.value.data,
+                    rd=op.rd.type,
                 )
             )
 
@@ -213,12 +203,11 @@ class LoadWordWithKnownOffset(RewritePattern):
             and isinstance(op.rs1.owner.immediate, IntegerAttr)
             and isinstance(op.immediate, IntegerAttr)
         ):
-            rd = cast(riscv.IntRegisterType, op.rd.type)
             rewriter.replace_matched_op(
                 riscv.LwOp(
                     op.rs1.owner.rs1,
                     op.rs1.owner.immediate.value.data + op.immediate.value.data,
-                    rd=rd,
+                    rd=op.rd.type,
                     comment=op.comment,
                 )
             )
@@ -248,12 +237,11 @@ class LoadFloatWordWithKnownOffset(RewritePattern):
             and isinstance(op.rs1.owner.immediate, IntegerAttr)
             and isinstance(op.immediate, IntegerAttr)
         ):
-            rd = cast(riscv.FloatRegisterType, op.rd.type)
             rewriter.replace_matched_op(
                 riscv.FLwOp(
                     op.rs1.owner.rs1,
                     op.rs1.owner.immediate.value.data + op.immediate.value.data,
-                    rd=rd,
+                    rd=op.rd.type,
                     comment=op.comment,
                 )
             )
@@ -283,12 +271,11 @@ class LoadDoubleWithKnownOffset(RewritePattern):
             and isinstance(op.rs1.owner.immediate, IntegerAttr)
             and isinstance(op.immediate, IntegerAttr)
         ):
-            rd = cast(riscv.FloatRegisterType, op.rd.type)
             rewriter.replace_matched_op(
                 riscv.FLdOp(
                     op.rs1.owner.rs1,
                     op.rs1.owner.immediate.value.data + op.immediate.value.data,
-                    rd=rd,
+                    rd=op.rd.type,
                     comment=op.comment,
                 )
             )

@@ -101,7 +101,7 @@ class ScfgwiOp(RdRsImmIntegerOperation):
         return self.rs1, self.immediate
 
     def verify_(self) -> None:
-        if cast(IntRegisterType, self.rd.type) != Registers.ZERO:
+        if self.rd.type != Registers.ZERO:
             raise VerifyException(f"scfgwi rd must be ZERO, got {self.rd.type}")
 
 

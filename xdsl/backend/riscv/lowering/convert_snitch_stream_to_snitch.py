@@ -1,12 +1,9 @@
-from typing import cast
-
 from xdsl.dialects import (
     builtin,
     riscv,
     riscv_snitch,
     snitch,
     snitch_stream,
-    stream,
 )
 from xdsl.ir import MLContext, Operation
 from xdsl.passes import ModulePass
@@ -111,9 +108,7 @@ class LowerStridedReadOp(RewritePattern):
     def match_and_rewrite(
         self, op: snitch_stream.StridedReadOp, rewriter: PatternRewriter, /
     ):
-        stream_type = cast(
-            stream.ReadableStreamType[riscv.FloatRegisterType], op.stream.type
-        )
+        stream_type = op.stream.type
 
         rewriter.replace_matched_op(
             [

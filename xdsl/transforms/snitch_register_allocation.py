@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, cast
+from typing import Any
 
 from xdsl.dialects import riscv, snitch_stream, stream
 from xdsl.dialects.builtin import ModuleOp
@@ -41,10 +41,12 @@ class AllocateSnitchStridedStreamRegisters(RewritePattern):
         /,
     ):
         stream_type = op.stream.type
-        assert isinstance(
-            stream_type, stream.ReadableStreamType | stream.WritableStreamType
-        )
-        stream_type = cast(stream.StreamType[Any], stream_type)
+        if isinstance(op, snitch_stream.StridedReadOp):
+            assert isinstance(stream_type, stream.ReadableStreamType)
+            op.stream.type = type(stream_type)(riscv.Registers.FT[op.dm.data])
+            return
+
+        assert isinstance(stream_type, stream.WritableStreamType)
         op.stream.type = type(stream_type)(riscv.Registers.FT[op.dm.data])
 
 
