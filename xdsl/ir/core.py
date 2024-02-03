@@ -612,18 +612,51 @@ class EnumAttribute(Data[EnumType]):
         return cast(EnumType, enum_type(val))
 
 
-@dataclass(frozen=True, init=False)
+class _ParametrizedAttributeParameters(Sequence[Attribute]):
+    attr_def: ParamAttrDef
+    param_attr: ParametrizedAttribute
+
+    def __init__(self, attr_def: ParamAttrDef, param_attr: ParametrizedAttribute):
+        self.attr_def = attr_def
+        self.param_attr = param_attr
+
+    def __len__(self) -> int:
+        return len(self.attr_def.parameters)
+
+    def __bool__(self) -> bool:
+        return bool(self.attr_def.parameters)
+
+    @overload
+    def __getitem__(self, idx: int) -> Attribute:
+        ...
+
+    @overload
+    def __getitem__(self, idx: slice) -> Sequence[Attribute]:
+        ...
+
+    def __getitem__(self, idx: int | slice) -> Attribute | Sequence[Attribute]:
+        if isinstance(idx, int):
+            return getattr(self.param_attr, self.attr_def.parameters[idx][0])
+        else:
+            return tuple(
+                getattr(self.param_attr, name)
+                for name, _ in self.attr_def.parameters[idx]
+            )
+
+    def __setitem__(self, idx: int, attribute: Attribute) -> None:
+        setattr(self.param_attr, self.attr_def.parameters[idx][0], attribute)
+
+    def __iter__(self) -> Iterator[Attribute]:
+        for name, _ in self.attr_def.parameters:
+            yield getattr(self, name)
+
+
+@dataclass(frozen=True)
 class ParametrizedAttribute(Attribute):
     """An attribute parametrized by other attributes."""
 
-    parameters: tuple[Attribute, ...] = field()
-
-    def __init__(self, parameters: Sequence[Attribute] = ()):
-        object.__setattr__(self, "parameters", tuple(parameters))
-        super().__init__()
-
     @classmethod
-    def new(cls: type[Self], params: Sequence[Attribute]) -> Self:
+    def new(cls, params: Sequence[Attribute]) -> Self:
         """
         Create a new `ParametrizedAttribute` given its parameters.
 
@@ -631,14 +664,21 @@ class ParametrizedAttribute(Attribute):
         attributes in a generic way (i.e., without knowing their concrete type
         statically).
         """
+        attr_def = cls.get_irdl_definition()
+        names = tuple(name for name, _ in attr_def.parameters)
+
         # Create the new attribute object, without calling its __init__.
         # We do this to allow users to redefine their own __init__.
         attr = cls.__new__(cls)
 
         # Call the __init__ of ParametrizedAttribute, which will set the
         # parameters field.
-        ParametrizedAttribute.__init__(attr, tuple(params))
+        ParametrizedAttribute.__init__(attr, **dict(zip(names, params)))
         return attr
+
+    @property
+    def parameters(self) -> Sequence[Attribute]:
+        return _ParametrizedAttributeParameters(self.get_irdl_definition(), self)
 
     @classmethod
     def parse_parameters(cls, parser: AttrParser) -> Sequence[Attribute]:

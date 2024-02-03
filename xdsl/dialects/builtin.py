@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable, Iterator, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from math import prod
 from typing import (
@@ -1042,10 +1042,12 @@ class DenseResourceAttr(ParametrizedAttribute):
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class DenseArrayBase(ParametrizedAttribute):
     name = "array"
 
-    elt_type: ParameterDef[IntegerType | AnyFloat]
+    # WIP WIP WIP! replace field with param_def(IntegerType | AnyFloat)
+    elt_type: Attribute = field()
     data: ParameterDef[ArrayAttr[IntAttr] | ArrayAttr[FloatData]]
 
     def verify(self):
@@ -1073,7 +1075,7 @@ class DenseArrayBase(ParametrizedAttribute):
         else:
             attr_list = cast(Sequence[IntAttr], data)
 
-        return DenseArrayBase([data_type, ArrayAttr(attr_list)])
+        return DenseArrayBase(data_type, ArrayAttr(attr_list))
 
     @staticmethod
     def create_dense_float(

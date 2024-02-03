@@ -325,13 +325,14 @@ class ParamAttrConstraint(AttrConstraint):
             raise VerifyException(
                 f"{attr} should be of base attribute {self.base_attr.name}"
             )
-        if len(self.param_constrs) != len(attr.parameters):
+        attr_params = attr.parameters()
+        if len(self.param_constrs) != len(attr_params):
             raise VerifyException(
                 f"{len(self.param_constrs)} parameters expected, "
-                f"but got {len(attr.parameters)}"
+                f"but got {attr_params}"
             )
         for idx, param_constr in enumerate(self.param_constrs):
-            param_constr.verify(attr.parameters[idx], constraint_vars)
+            param_constr.verify(attr_params[idx], constraint_vars)
 
     def get_resolved_variables(self) -> set[str]:
         if not self.param_constrs:
@@ -2292,15 +2293,16 @@ class ParamAttrDef:
     def verify(self, attr: ParametrizedAttribute):
         """Verify that `attr` satisfies the invariants."""
 
-        if len(attr.parameters) != len(self.parameters):
+        attr_parameters = attr.parameters()
+        if len(attr_parameters) != len(self.parameters):
             raise VerifyException(
                 f"In {self.name} attribute verifier: "
                 f"{len(self.parameters)} parameters expected, got "
-                f"{len(attr.parameters)}"
+                f"{len(attr_parameters)}"
             )
 
         constraint_vars: dict[str, Attribute] = {}
-        for param, (_, param_def) in zip(attr.parameters, self.parameters):
+        for param, (_, param_def) in zip(attr_parameters, self.parameters):
             param_def.verify(param, constraint_vars)
 
 
@@ -2314,16 +2316,6 @@ def irdl_param_attr_definition(cls: type[_PAttrT]) -> type[_PAttrT]:
 
     # New fields and methods added to the attribute
     new_fields = dict[str, Any]()
-
-    def param_name_field(idx: int):
-        @property
-        def field(self: _PAttrT):
-            return self.parameters[idx]
-
-        return field
-
-    for idx, (param_name, _) in enumerate(attr_def.parameters):
-        new_fields[param_name] = param_name_field(idx)
 
     @classmethod
     def get_irdl_definition(cls: type[_PAttrT]):

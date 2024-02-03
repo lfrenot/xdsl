@@ -85,7 +85,7 @@ def test_DenseArrayBase_verifier_failure():
     # Check that a malformed attribute raises a verify error
 
     with pytest.raises(VerifyException) as err:
-        DenseArrayBase([f32, ArrayAttr([IntAttr(0)])])
+        DenseArrayBase(f32, ArrayAttr([IntAttr(0)]))
     assert err.value.args[0] == (
         "dense array of float element type " "should only contain floats"
     )
