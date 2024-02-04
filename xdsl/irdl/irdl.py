@@ -325,7 +325,7 @@ class ParamAttrConstraint(AttrConstraint):
             raise VerifyException(
                 f"{attr} should be of base attribute {self.base_attr.name}"
             )
-        attr_params = attr.parameters()
+        attr_params = attr.parameters
         if len(self.param_constrs) != len(attr_params):
             raise VerifyException(
                 f"{len(self.param_constrs)} parameters expected, "
@@ -2293,7 +2293,7 @@ class ParamAttrDef:
     def verify(self, attr: ParametrizedAttribute):
         """Verify that `attr` satisfies the invariants."""
 
-        attr_parameters = attr.parameters()
+        attr_parameters = attr.parameters
         if len(attr_parameters) != len(self.parameters):
             raise VerifyException(
                 f"In {self.name} attribute verifier: "
@@ -2323,9 +2323,7 @@ def irdl_param_attr_definition(cls: type[_PAttrT]) -> type[_PAttrT]:
 
     new_fields["get_irdl_definition"] = get_irdl_definition
 
-    return dataclass(frozen=True, init=False)(
-        type.__new__(type(cls), cls.__name__, (cls,), {**cls.__dict__, **new_fields})
-    )
+    return type.__new__(type(cls), cls.__name__, (cls,), {**cls.__dict__, **new_fields})
 
 
 TypeAttributeInvT = TypeVar("TypeAttributeInvT", bound=type[Attribute])

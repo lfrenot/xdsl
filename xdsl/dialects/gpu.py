@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import auto
 from typing import TypeVar
 
@@ -113,6 +114,7 @@ class ProcessorAttr(EnumAttribute[ProcessorEnum], OpaqueSyntaxAttribute):
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class LoopDimMapAttr(ParametrizedAttribute):
     name = "gpu.loop_dim_map"
 

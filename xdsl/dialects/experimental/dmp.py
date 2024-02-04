@@ -82,13 +82,20 @@ class ExchangeDeclarationAttr(ParametrizedAttribute):
         neighbor: Sequence[int],
     ):
         data_type = builtin.i64
-        super().__init__(
-            [
-                builtin.DenseArrayBase.from_list(data_type, offset),
-                builtin.DenseArrayBase.from_list(data_type, size),
-                builtin.DenseArrayBase.from_list(data_type, source_offset),
-                builtin.DenseArrayBase.from_list(data_type, neighbor),
-            ]
+
+        object.__setattr__(
+            self, "offset_", builtin.DenseArrayBase.from_list(data_type, offset)
+        )
+        object.__setattr__(
+            self, "size_", builtin.DenseArrayBase.from_list(data_type, size)
+        )
+        object.__setattr__(
+            self,
+            "source_offset_",
+            builtin.DenseArrayBase.from_list(data_type, source_offset),
+        )
+        object.__setattr__(
+            self, "neighbor_", builtin.DenseArrayBase.from_list(data_type, neighbor)
         )
 
     @classmethod
@@ -291,10 +298,10 @@ class ShapeAttr(ParametrizedAttribute):
     ):
         data_type = builtin.i64
         return ShapeAttr(
-            [
+            *(
                 builtin.DenseArrayBase.from_list(data_type, tuple(data))
                 for data in (buff_lb, buff_ub, core_lb, core_ub)
-            ]
+            )
         )
 
     def buffer_start(self, dim: int) -> int:
@@ -393,7 +400,10 @@ class RankTopoAttr(ParametrizedAttribute):
     def __init__(self, shape: Sequence[int]):
         if len(shape) < 1:
             raise ValueError("dmp.grid must have at least one dimension!")
-        super().__init__([builtin.DenseArrayBase.from_list(builtin.i64, shape)])
+
+        object.__setattr__(
+            self, "shape", builtin.DenseArrayBase.from_list(builtin.i64, shape)
+        )
 
     def as_tuple(self) -> tuple[int, ...]:
         shape = self.shape.as_tuple()

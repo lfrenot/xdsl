@@ -75,7 +75,9 @@ class InnerRefAttr(ParametrizedAttribute):
             module = StringAttr(module)
         if isinstance(name, str):
             name = StringAttr(name)
-        super().__init__([FlatSymbolRefAttr(module), name])
+
+        object.__setattr__(self, "module_ref", FlatSymbolRefAttr(module))
+        object.__setattr__(self, "sym_name", name)
 
     @classmethod
     def get_from_operation(

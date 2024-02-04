@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
 from typing import Annotated, Generic, TypeVar
 
 from xdsl.dialects.builtin import (
@@ -141,12 +142,10 @@ _RangeT = TypeVar(
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class RangeType(Generic[_RangeT], ParametrizedAttribute, TypeAttribute):
     name = "pdl.range"
     element_type: ParameterDef[_RangeT]
-
-    def __init__(self, element_type: _RangeT):
-        super().__init__([element_type])
 
 
 @irdl_op_definition

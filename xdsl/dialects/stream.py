@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Annotated, Generic, TypeVar, cast
 
 from xdsl.dialects.builtin import (
@@ -29,6 +30,7 @@ from xdsl.printer import Printer
 _StreamTypeElement = TypeVar("_StreamTypeElement", bound=Attribute)
 
 
+@dataclass(frozen=True)
 class StreamType(
     Generic[_StreamTypeElement],
     ParametrizedAttribute,
@@ -36,9 +38,6 @@ class StreamType(
     ContainerType[_StreamTypeElement],
 ):
     element_type: ParameterDef[_StreamTypeElement]
-
-    def __init__(self, element_type: _StreamTypeElement):
-        super().__init__([element_type])
 
     def get_element_type(self) -> _StreamTypeElement:
         return self.element_type
@@ -50,6 +49,7 @@ class ReadableStreamType(Generic[_StreamTypeElement], StreamType[_StreamTypeElem
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class WritableStreamType(Generic[_StreamTypeElement], StreamType[_StreamTypeElement]):
     name = "stream.writable"
 

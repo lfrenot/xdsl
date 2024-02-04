@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, Generic, Literal, TypeAlias, TypeVar
 
 from xdsl.dialects.builtin import (
@@ -362,6 +363,7 @@ _T = TypeVar("_T", bound=Attribute)
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class MyParamAttr(Generic[_T], ParametrizedAttribute):
     name = "test.param"
 
@@ -369,7 +371,7 @@ class MyParamAttr(Generic[_T], ParametrizedAttribute):
 
 
 def test_parametrized_attribute():
-    attr = MyParamAttr[IntAttr]([IntAttr(0)])
+    attr = MyParamAttr[IntAttr](IntAttr(0))
 
     assert isa(attr, MyParamAttr)
     assert isa(attr, MyParamAttr[IntAttr])

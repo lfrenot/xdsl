@@ -648,7 +648,7 @@ class _ParametrizedAttributeParameters(Sequence[Attribute]):
 
     def __iter__(self) -> Iterator[Attribute]:
         for name, _ in self.attr_def.parameters:
-            yield getattr(self, name)
+            yield getattr(self.param_attr, name)
 
 
 @dataclass(frozen=True)
@@ -664,16 +664,18 @@ class ParametrizedAttribute(Attribute):
         attributes in a generic way (i.e., without knowing their concrete type
         statically).
         """
-        attr_def = cls.get_irdl_definition()
-        names = tuple(name for name, _ in attr_def.parameters)
-
         # Create the new attribute object, without calling its __init__.
         # We do this to allow users to redefine their own __init__.
         attr = cls.__new__(cls)
 
         # Call the __init__ of ParametrizedAttribute, which will set the
         # parameters field.
-        ParametrizedAttribute.__init__(attr, **dict(zip(names, params)))
+
+        attr_def = cls.get_irdl_definition()
+
+        for (name, _), param in zip(attr_def.parameters, params, strict=True):
+            object.__setattr__(attr, name, param)
+
         return attr
 
     @property

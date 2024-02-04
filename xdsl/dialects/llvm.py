@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from collections.abc import Sequence
+from dataclasses import dataclass
 from enum import Enum
 from types import EllipsisType
 from typing import Annotated, Generic, Literal, TypeVar
@@ -71,9 +72,9 @@ def _parse_llvm_type(parser: AttrParser):
     if parser.parse_optional_characters("void"):
         return LLVMVoidType()
     if parser.parse_optional_characters("ptr"):
-        return LLVMPointerType(LLVMPointerType.parse_parameters(parser))
+        return LLVMPointerType.new(LLVMPointerType.parse_parameters(parser))
     if parser.parse_optional_characters("array"):
-        return LLVMArrayType(LLVMArrayType.parse_parameters(parser))
+        return LLVMArrayType.new(LLVMArrayType.parse_parameters(parser))
 
 
 def parse_llvm_type(parser: AttrParser):
@@ -89,6 +90,7 @@ def parse_optional_llvm_type(parser: AttrParser):
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class LLVMStructType(ParametrizedAttribute, TypeAttribute):
     """
     https://mlir.llvm.org/docs/Dialects/LLVM/#structure-types
@@ -105,7 +107,7 @@ class LLVMStructType(ParametrizedAttribute, TypeAttribute):
 
     @staticmethod
     def from_type_list(types: Sequence[Attribute]) -> LLVMStructType:
-        return LLVMStructType([StringAttr(""), ArrayAttr(types)])
+        return LLVMStructType(StringAttr(""), ArrayAttr(types))
 
     def print_parameters(self, printer: Printer) -> None:
         printer.print("<")
@@ -133,6 +135,7 @@ class LLVMStructType(ParametrizedAttribute, TypeAttribute):
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class LLVMPointerType(
     ParametrizedAttribute, TypeAttribute, ContainerType[Attribute | None]
 ):
@@ -170,11 +173,11 @@ class LLVMPointerType(
 
     @staticmethod
     def opaque():
-        return LLVMPointerType([NoneAttr(), NoneAttr()])
+        return LLVMPointerType(NoneAttr(), NoneAttr())
 
     @staticmethod
     def typed(type: Attribute):
-        return LLVMPointerType([type, NoneAttr()])
+        return LLVMPointerType(type, NoneAttr())
 
     def is_typed(self):
         return not isinstance(self.type, NoneAttr)
@@ -184,6 +187,7 @@ class LLVMPointerType(
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class LLVMArrayType(ParametrizedAttribute, TypeAttribute):
     name = "llvm.array"
 
@@ -215,7 +219,7 @@ class LLVMArrayType(ParametrizedAttribute, TypeAttribute):
     def from_size_and_type(size: int | IntAttr, type: Attribute):
         if isinstance(size, int):
             size = IntAttr(size)
-        return LLVMArrayType([size, type])
+        return LLVMArrayType(size, type)
 
 
 @irdl_attr_definition
@@ -224,6 +228,7 @@ class LLVMVoidType(ParametrizedAttribute, TypeAttribute):
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class LLVMFunctionType(ParametrizedAttribute, TypeAttribute):
     """
     Currently does not support variadics.
@@ -248,7 +253,10 @@ class LLVMFunctionType(ParametrizedAttribute, TypeAttribute):
         if output is None:
             output = LLVMVoidType()
         variad_attr = UnitAttr() if is_variadic else NoneAttr()
-        super().__init__([inputs, output, variad_attr])
+
+        object.__setattr__(self, "inputs", inputs)
+        object.__setattr__(self, "output", output)
+        object.__setattr__(self, "variad_attr", variad_attr)
 
     @property
     def is_variadic(self) -> bool:
@@ -316,7 +324,8 @@ class LinkageAttr(ParametrizedAttribute):
     def __init__(self, linkage: str | StringAttr) -> None:
         if isinstance(linkage, str):
             linkage = StringAttr(linkage)
-        super().__init__([linkage])
+
+        object.__setattr__(self, "linkage", linkage)
 
     def print_parameters(self, printer: Printer) -> None:
         printer.print_string("<")
@@ -1006,7 +1015,7 @@ class CallingConventionAttr(ParametrizedAttribute):
         return self.convention.data
 
     def __init__(self, conv: str):
-        super().__init__([StringAttr(conv)])
+        object.__setattr__(self, "convention", StringAttr(conv))
 
     def _verify(self):
         if self.cconv_name not in LLVM_CALLING_CONVS:

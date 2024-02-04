@@ -46,6 +46,7 @@ _FieldTypeElement = TypeVar("_FieldTypeElement", bound=Attribute, covariant=True
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class IndexAttr(ParametrizedAttribute, Iterable[int]):
     name = "stencil.index"
 
@@ -72,11 +73,9 @@ class IndexAttr(ParametrizedAttribute, Iterable[int]):
     @staticmethod
     def get(*indices: int | IntAttr):
         return IndexAttr(
-            [
-                ArrayAttr(
-                    [(IntAttr(idx) if isinstance(idx, int) else idx) for idx in indices]
-                )
-            ]
+            ArrayAttr(
+                [(IntAttr(idx) if isinstance(idx, int) else idx) for idx in indices]
+            )
         )
 
     @staticmethod
@@ -144,12 +143,9 @@ class StencilBoundsAttr(ParametrizedAttribute):
             lb, ub = zip(*bounds)
         else:
             lb, ub = (), ()
-        super().__init__(
-            [
-                IndexAttr.get(*lb),
-                IndexAttr.get(*ub),
-            ]
-        )
+
+        object.__setattr__(self, "lb", IndexAttr.get(*lb))
+        object.__setattr__(self, "ub", IndexAttr.get(*ub))
 
 
 class StencilType(
@@ -252,7 +248,9 @@ class StencilType(
             nbounds = IntAttr(bounds)
         else:
             nbounds = bounds
-        return super().__init__([nbounds, element_type])
+
+        object.__setattr__(self, "bounds", nbounds)
+        object.__setattr__(self, "element_type", element_type)
 
 
 @irdl_attr_definition
@@ -288,12 +286,10 @@ class TempType(
 
 
 @irdl_attr_definition
+@dataclass(frozen=True)
 class ResultType(ParametrizedAttribute, TypeAttribute):
     name = "stencil.result"
     elem: ParameterDef[AnyFloat]
-
-    def __init__(self, float_t: AnyFloat) -> None:
-        super().__init__([float_t])
 
 
 @irdl_op_definition
@@ -528,9 +524,7 @@ class AccessOp(IRDLOperation):
 
         attributes: dict[str, IndexAttr | ArrayAttr[IntAttr]] = {
             "offset": IndexAttr(
-                [
-                    ArrayAttr(IntAttr(value) for value in offset),
-                ]
+                ArrayAttr(IntAttr(value) for value in offset),
             ),
         }
 
