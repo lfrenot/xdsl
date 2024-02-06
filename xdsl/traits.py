@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import abc
+from collections.abc import Iterator, Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, TypeVar
 
@@ -8,7 +9,7 @@ from xdsl.utils.exceptions import VerifyException
 
 if TYPE_CHECKING:
     from xdsl.dialects.builtin import StringAttr, SymbolRefAttr
-    from xdsl.ir import Operation, Region
+    from xdsl.ir import Operation, Region, SSAValue
     from xdsl.pattern_rewriter import RewritePattern
 
 
@@ -398,3 +399,20 @@ class HasCanonicalisationPatternsTrait(OpTrait):
     @abc.abstractmethod
     def get_canonicalization_patterns(cls) -> tuple[RewritePattern, ...]:
         raise NotImplementedError()
+
+
+@dataclass(frozen=True)
+class SameTypeConstraints(OpTrait):
+    """Constraint the operation to have a specific parent operation."""
+
+    @abc.abstractmethod
+    def same_type_values(self, op: Operation) -> Iterator[Sequence[SSAValue]]:
+        raise NotImplementedError()
+
+    def verify(self, op: Operation) -> None:
+        for values in self.same_type_values(op):
+            types = set(value.type for value in values)
+            if len(types) != 1:
+                raise VerifyException(
+                    f"Mismatch in value types for op {op.name}, expected types of {tuple(values)} to be the same."
+                )

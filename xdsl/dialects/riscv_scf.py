@@ -5,7 +5,8 @@ RISC-V SCF dialect
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from typing import cast
 
 from typing_extensions import Self
 
@@ -34,7 +35,12 @@ from xdsl.irdl import (
 )
 from xdsl.parser import Parser, UnresolvedOperand
 from xdsl.printer import Printer
-from xdsl.traits import HasParent, IsTerminator, SingleBlockImplicitTerminator
+from xdsl.traits import (
+    HasParent,
+    IsTerminator,
+    SameTypeConstraints,
+    SingleBlockImplicitTerminator,
+)
 from xdsl.utils.exceptions import VerifyException
 
 
@@ -45,6 +51,14 @@ class YieldOp(AbstractYieldOperation[RISCVRegisterType]):
     traits = traits_def(
         lambda: frozenset([IsTerminator(), HasParent(WhileOp, ForRofOperation)])
     )
+
+
+class ForRofOperationSameTypeValuesConstraints(SameTypeConstraints):
+    def same_type_values(self, op: Operation) -> Iterator[Sequence[SSAValue]]:
+        op = cast(ForRofOperation, op)
+        block_vals = op.body.block.args[1:]
+        yield_op = cast(YieldOp, op.body.block.last_op)
+        yield from zip(op.iter_args, block_vals, yield_op.operands, op.results)
 
 
 class ForRofOperation(IRDLOperation, ABC):
@@ -58,7 +72,12 @@ class ForRofOperation(IRDLOperation, ABC):
 
     body: Region = region_def("single_block")
 
-    traits = frozenset([SingleBlockImplicitTerminator(YieldOp)])
+    traits = frozenset(
+        [
+            SingleBlockImplicitTerminator(YieldOp),
+            ForRofOperationSameTypeValuesConstraints(),
+        ]
+    )
 
     def __init__(
         self,
@@ -90,15 +109,6 @@ class ForRofOperation(IRDLOperation, ABC):
                     f"The first block argument of the body is of type {iter_var.type}"
                     " instead of riscv.IntRegisterType"
                 )
-        for idx, (arg, block_arg) in enumerate(
-            zip(self.iter_args, self.body.block.args[1:])
-        ):
-            if block_arg.type != arg.type:
-                raise VerifyException(
-                    f"Block argument {idx + 1} has wrong type, expected {arg.type}, "
-                    f"got {block_arg.type}. Arguments after the "
-                    f"induction variable must match the carried variables."
-                )
         if len(self.body.ops) > 0 and isinstance(
             yieldop := self.body.block.last_op, YieldOp
         ):
@@ -107,13 +117,6 @@ class ForRofOperation(IRDLOperation, ABC):
                     f"Expected {len(self.iter_args)} args, got {len(yieldop.arguments)}. "
                     f"The riscv_scf.for must yield its carried variables."
                 )
-            for iter_arg, yield_arg in zip(self.iter_args, yieldop.arguments):
-                if iter_arg.type != yield_arg.type:
-                    raise VerifyException(
-                        f"Expected {iter_arg.type}, got {yield_arg.type}. The "
-                        f"riscv_scf.for's riscv_scf.yield must match carried"
-                        f"variables types."
-                    )
 
     @abstractmethod
     def _print_bounds(self, printer: Printer) -> None:
