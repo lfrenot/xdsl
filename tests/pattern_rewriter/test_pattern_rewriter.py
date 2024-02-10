@@ -11,6 +11,7 @@ from xdsl.dialects.builtin import (
     IntegerType,
     ModuleOp,
     StringAttr,
+    UnitAttr,
     i32,
     i64,
 )
@@ -368,18 +369,26 @@ def test_insert_op_before_matched_op():
 def test_insert_op_at_start():
     """Test rewrites where operations are inserted with a given position."""
 
-    prog = """"builtin.module"() ({
-  %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
-}) : () -> ()"""
+    prog = """
+builtin.module {
+  "test.op"() ({
+    %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
+  }) : () -> ()
+}
+"""
 
-    expected = """"builtin.module"() ({
-  %0 = "arith.constant"() <{"value" = 42 : i32}> : () -> i32
-  %1 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
-}) : () -> ()"""
+    expected = """
+"builtin.module"() ({
+  "test.op"() ({
+    %0 = "arith.constant"() <{"value" = 42 : i32}> : () -> i32
+    %1 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
+  }) : () -> ()
+}) : () -> ()
+"""
 
     class Rewrite(RewritePattern):
         @op_type_rewrite_pattern
-        def match_and_rewrite(self, mod: ModuleOp, rewriter: PatternRewriter):
+        def match_and_rewrite(self, mod: test.TestOp, rewriter: PatternRewriter):
             new_cst = Constant.from_int_and_width(42, i32)
 
             rewriter.insert_op_at_start(new_cst, mod.regions[0].blocks[0])
@@ -395,21 +404,29 @@ def test_insert_op_at_start():
 def test_insert_op_before():
     """Test rewrites where operations are inserted before a given operation."""
 
-    prog = """"builtin.module"() ({
-  %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
-}) : () -> ()"""
+    prog = """
+builtin.module {
+  "test.op"() ({
+    %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
+  }) : () -> ()
+}
+"""
 
-    expected = """"builtin.module"() ({
-  %0 = "arith.constant"() <{"value" = 42 : i32}> : () -> i32
-  %1 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
-}) : () -> ()"""
+    expected = """
+"builtin.module"() ({
+  "test.op"() ({
+    %0 = "arith.constant"() <{"value" = 42 : i32}> : () -> i32
+    %1 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
+  }) : () -> ()
+}) : () -> ()
+"""
 
     class Rewrite(RewritePattern):
         @op_type_rewrite_pattern
-        def match_and_rewrite(self, mod: ModuleOp, rewriter: PatternRewriter):
+        def match_and_rewrite(self, op: test.TestOp, rewriter: PatternRewriter):
             new_cst = Constant.from_int_and_width(42, i32)
 
-            first_op = mod.ops.first
+            first_op = op.regs[0].ops.first
             assert first_op is not None
             rewriter.insert_op_before(new_cst, first_op)
 
@@ -424,21 +441,29 @@ def test_insert_op_before():
 def test_insert_op_after():
     """Test rewrites where operations are inserted after a given operation."""
 
-    prog = """"builtin.module"() ({
-  %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
-}) : () -> ()"""
+    prog = """
+builtin.module {
+  "test.op"() ({
+    %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
+  }) : () -> ()
+}
+"""
 
-    expected = """"builtin.module"() ({
-  %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
-  %1 = "arith.constant"() <{"value" = 42 : i32}> : () -> i32
-}) : () -> ()"""
+    expected = """
+"builtin.module"() ({
+  "test.op"() ({
+    %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
+    %1 = "arith.constant"() <{"value" = 42 : i32}> : () -> i32
+  }) : () -> ()
+}) : () -> ()
+"""
 
     class Rewrite(RewritePattern):
         @op_type_rewrite_pattern
-        def match_and_rewrite(self, mod: ModuleOp, rewriter: PatternRewriter):
+        def match_and_rewrite(self, op: test.TestOp, rewriter: PatternRewriter):
             new_cst = Constant.from_int_and_width(42, i32)
 
-            first_op = mod.ops.first
+            first_op = op.regs[0].ops.first
             assert first_op is not None
             rewriter.insert_op_after(new_cst, first_op)
 
@@ -583,18 +608,26 @@ def test_operation_deletion_failure():
 def test_delete_inner_op():
     """Test rewrites where an operation inside a region of the matched op is deleted."""
 
-    prog = """"builtin.module"() ({
-  %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
-}) : () -> ()"""
+    prog = """
+builtin.module {
+  "test.op"() ({
+    %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
+  }) : () -> ()
+}
+"""
 
-    expected = """"builtin.module"() ({
-^0:
-}) : () -> ()"""
+    expected = """
+"builtin.module"() ({
+  "test.op"() ({
+  ^0:
+  }) : () -> ()
+}) : () -> ()
+"""
 
     class Rewrite(RewritePattern):
         @op_type_rewrite_pattern
-        def match_and_rewrite(self, op: ModuleOp, rewriter: PatternRewriter):
-            first_op = op.ops.first
+        def match_and_rewrite(self, op: test.TestOp, rewriter: PatternRewriter):
+            first_op = op.regs[0].ops.first
 
             assert first_op is not None
             rewriter.erase_op(first_op)
@@ -610,18 +643,26 @@ def test_delete_inner_op():
 def test_replace_inner_op():
     """Test rewrites where an operation inside a region of the matched op is deleted."""
 
-    prog = """"builtin.module"() ({
-  %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
-}) : () -> ()"""
+    prog = """
+builtin.module {
+  "test.op"() ({
+    %0 = "arith.constant"() <{"value" = 5 : i32}> : () -> i32
+  }) : () -> ()
+}
+"""
 
-    expected = """"builtin.module"() ({
-  %0 = "arith.constant"() <{"value" = 42 : i32}> : () -> i32
-}) : () -> ()"""
+    expected = """
+"builtin.module"() ({
+  "test.op"() ({
+    %0 = "arith.constant"() <{"value" = 42 : i32}> : () -> i32
+  }) : () -> ()
+}) : () -> ()
+"""
 
     class Rewrite(RewritePattern):
         @op_type_rewrite_pattern
-        def match_and_rewrite(self, op: ModuleOp, rewriter: PatternRewriter):
-            first_op = op.ops.first
+        def match_and_rewrite(self, op: test.TestOp, rewriter: PatternRewriter):
+            first_op = op.regs[0].ops.first
 
             assert first_op is not None
             rewriter.replace_op(first_op, [Constant.from_int_and_width(42, i32)])
@@ -1037,31 +1078,36 @@ def test_inline_block_after_matched():
 def test_move_region_contents_to_new_regions():
     """Test moving a region outside of a region."""
 
-    prog = """\
+    prog = """
 "builtin.module"() ({
-  %0 = "test.op"() : () -> !test.type<"int">
-  %1 = "test.op"() ({
-  ^0:
-    %2 = "test.op"() : () -> !test.type<"int">
-  }) : () -> !test.type<"int">
+  "test.op"() ({
+    %0 = "test.op"() : () -> !test.type<"int">
+    %1 = "test.op"() ({
+      %2 = "test.op"() : () -> !test.type<"int">
+    }) : () -> !test.type<"int">
+  }) {"match_me"} : () -> ()
 }) : () -> ()
 """
 
     expected = """\
 "builtin.module"() ({
-  %0 = "test.op"() : () -> !test.type<"int">
-  %1 = "test.op"() ({
-  }) : () -> !test.type<"int">
-  %2 = "test.op"() ({
-    %3 = "test.op"() : () -> !test.type<"int">
-  }) : () -> !test.type<"int">
+  "test.op"() ({
+    %0 = "test.op"() : () -> !test.type<"int">
+    %1 = "test.op"() ({
+    }) : () -> !test.type<"int">
+    %2 = "test.op"() ({
+      %3 = "test.op"() : () -> !test.type<"int">
+    }) : () -> !test.type<"int">
+  }) {"match_me"} : () -> ()
 }) : () -> ()
 """
 
     class Rewrite(RewritePattern):
         @op_type_rewrite_pattern
-        def match_and_rewrite(self, op: ModuleOp, rewriter: PatternRewriter):
-            ops_iter = iter(op.ops)
+        def match_and_rewrite(self, op: test.TestOp, rewriter: PatternRewriter):
+            if "match_me" not in op.attributes:
+                return
+            ops_iter = iter(op.regs[0].ops)
 
             _ = next(ops_iter)  # skip first op
             old_op = next(ops_iter)
@@ -1338,6 +1384,37 @@ def test_inline_region_at_end():
         PatternRewriteWalker(Rewrite(), apply_recursively=False),
         op_inserted=0,
         op_removed=1,
+    )
+
+
+def test_toplevel_op_not_matched():
+    """Test that the toplevel operation is not matched as it has no parent."""
+    prog = """
+"builtin.module"() ({
+  "test.op"() : () -> ()
+  "test.op"() ({
+    "test.op"() : () -> ()
+  }) : () -> ()
+}) : () -> ()"""
+
+    expected = """
+"builtin.module"() ({
+  "test.op"() {"matched"} : () -> ()
+  "test.op"() ({
+    "test.op"() {"matched"} : () -> ()
+  }) {"matched"} : () -> ()
+}) : () -> ()"""
+
+    class Rewrite(RewritePattern):
+        def match_and_rewrite(self, op: Operation, rewriter: PatternRewriter):
+            op.attributes["matched"] = UnitAttr()
+
+    rewrite_and_compare(
+        prog,
+        expected,
+        PatternRewriteWalker(Rewrite(), apply_recursively=False),
+        op_inserted=0,
+        op_removed=0,
     )
 
 
