@@ -14,7 +14,7 @@ from typing import (
     get_origin,
 )
 
-from xdsl.builder import BuilderListener
+from xdsl.builder import Builder, BuilderListener, InsertPoint
 from xdsl.dialects.builtin import ArrayAttr, ModuleOp
 from xdsl.ir import (
     Attribute,
@@ -78,8 +78,8 @@ class PatternRewriterListener(BuilderListener):
             )
 
 
-@dataclass(eq=False)
-class PatternRewriter(PatternRewriterListener):
+@dataclass(eq=False, init=False)
+class PatternRewriter(Builder, PatternRewriterListener):
     """
     A rewriter used during pattern matching.
     Once an operation is matched, this rewriter is used to apply
@@ -91,6 +91,11 @@ class PatternRewriter(PatternRewriterListener):
 
     has_done_action: bool = field(default=False, init=False)
     """Has the rewriter done any action during the current match."""
+
+    def __init__(self, current_operation: Operation):
+        PatternRewriterListener.__init__(self)
+        self.current_operation = current_operation
+        Builder.__init__(self, InsertPoint.before(current_operation))
 
     def insert_op_before_matched_op(self, op: Operation | Sequence[Operation]):
         """Insert operations before the matched operation."""
