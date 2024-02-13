@@ -761,6 +761,7 @@ class PatternRewriteWalker:
             # Reset the rewriter on `op`
             rewriter.has_done_action = False
             rewriter.current_operation = op
+            rewriter.insertion_point = InsertPoint.before(op)
 
             # Apply the pattern on the operation
             self.pattern.match_and_rewrite(op, rewriter)

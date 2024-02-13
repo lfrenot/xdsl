@@ -2,6 +2,7 @@ from collections.abc import Sequence
 
 from conftest import assert_print_op
 
+from xdsl.builder import ImplicitBuilder
 from xdsl.dialects import test
 from xdsl.dialects.arith import Addi, Arith, Constant, Muli
 from xdsl.dialects.builtin import (
@@ -1415,6 +1416,45 @@ def test_toplevel_op_not_matched():
         PatternRewriteWalker(Rewrite(), apply_recursively=False),
         op_inserted=0,
         op_removed=0,
+    )
+
+
+def test_pattern_rewriter_as_op_builder():
+    """Test that the PatternRewriter works as an OpBuilder."""
+    prog = """
+"builtin.module"() ({
+  "test.op"() : () -> ()
+  "test.op"() {"nomatch"} : () -> ()
+  "test.op"() : () -> ()
+}) : () -> ()"""
+
+    expected = """
+"builtin.module"() ({
+  "test.op"() {"inserted"} : () -> ()
+  "test.op"() {"replaced"} : () -> ()
+  "test.op"() {"nomatch"} : () -> ()
+  "test.op"() {"inserted"} : () -> ()
+  "test.op"() {"replaced"} : () -> ()
+}) : () -> ()"""
+
+    class Rewrite(RewritePattern):
+        @op_type_rewrite_pattern
+        def match_and_rewrite(self, op: test.TestOp, rewriter: PatternRewriter):
+            if "nomatch" in op.attributes:
+                return
+            with ImplicitBuilder(rewriter):
+                test.TestOp.create(attributes={"inserted": UnitAttr()})
+            rewriter.replace_matched_op(
+                test.TestOp.create(attributes={"replaced": UnitAttr()})
+            )
+
+    rewrite_and_compare(
+        prog,
+        expected,
+        PatternRewriteWalker(Rewrite(), apply_recursively=False),
+        op_inserted=4,
+        op_removed=2,
+        op_replaced=2,
     )
 
 
