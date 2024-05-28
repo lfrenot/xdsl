@@ -772,3 +772,8 @@ class PatternRewriteWalker:
             op = self._worklist.pop()
             if op is None:
                 return rewriter_has_done_action
+
+
+def untested(hello: int):
+    print("hello")
+    return None
