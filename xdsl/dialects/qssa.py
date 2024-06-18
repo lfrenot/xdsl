@@ -2,14 +2,15 @@ from __future__ import annotations
 
 from abc import ABC
 
-from xdsl.dialects.builtin import IntegerType
-from xdsl.ir import Dialect, ParametrizedAttribute, SSAValue, TypeAttribute
+from xdsl.dialects.builtin import IntegerAttr, IntegerType
+from xdsl.ir import Attribute, Dialect, ParametrizedAttribute, SSAValue, TypeAttribute
 from xdsl.irdl import (
     IRDLOperation,
     VarOpResult,
     irdl_attr_definition,
     irdl_op_definition,
     operand_def,
+    opt_attr_def,
     result_def,
     var_result_def,
 )
@@ -30,7 +31,7 @@ qubit = QubitAttr()
 
 
 class QubitBase(IRDLOperation, ABC):
-    pass
+    layer = opt_attr_def(IntegerAttr)
 
 
 @irdl_op_definition
@@ -64,6 +65,23 @@ class QubitAllocOp(QubitBase):
             printer.print(self.num_qubits)
 
         printer.print_op_attributes(self.attributes)
+
+
+@irdl_op_definition
+class IdOp(QubitBase):
+    name = "qssa.id"
+
+    input = operand_def(qubit)
+
+    result = result_def(qubit)
+
+    assembly_format = "$input attr-dict"
+
+    def __init__(self, input: SSAValue, layer: int | None):
+        attrs: dict[str, Attribute] = {}
+        if layer is not None:
+            attrs["layer"] = IntegerAttr(layer, 64)
+        super().__init__(operands=(input,), result_types=(qubit,), attributes=attrs)
 
 
 @irdl_op_definition
@@ -145,6 +163,7 @@ class MeasureOp(QubitBase):
 QSSA = Dialect(
     "qssa",
     [
+        IdOp,
         CNotGateOp,
         CZGateOp,
         HGateOp,

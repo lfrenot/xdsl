@@ -610,6 +610,11 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
 
         return test_lower_snitch_stream_to_asm.TestLowerSnitchStreamToAsm
 
+    def get_assign_layers_pass():
+        from xdsl.transforms.qssa import AssignLayerPass
+
+        return AssignLayerPass
+
     return {
         "arith-add-fastmath": get_arith_add_fastmath,
         "loop-hoist-memref": get_loop_hoist_memref,
@@ -667,6 +672,7 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
         "stencil-tensorize-z-dimension": get_stencil_tensorize_z_dimension,
         "stencil-unroll": get_stencil_unroll,
         "test-lower-snitch-stream-to-asm": get_test_lower_snitch_stream_to_asm,
+        "assign-layers": get_assign_layers_pass,
     }
 
 
