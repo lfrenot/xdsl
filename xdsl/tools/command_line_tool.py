@@ -273,6 +273,16 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
 
         return convert_qssa_to_qref.ConvertQssaToQRef
 
+    def get_reduce_hadamard_pass():
+        from xdsl.transforms import qssa_rewrites
+
+        return qssa_rewrites.ReduceHadamardPass
+
+    def get_gate_cancellation_pass():
+        from xdsl.transforms import qssa_rewrites
+
+        return qssa_rewrites.GateCancellation
+
     def get_scf_parallel_loop_tiling():
         from xdsl.transforms import scf_parallel_loop_tiling
 
@@ -380,6 +390,8 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
         "convert-scf-to-openmp": get_convert_scf_to_openmp,
         "convert-scf-to-riscv-scf": get_convert_scf_to_riscv_scf,
         "convert-snitch-stream-to-snitch": get_convert_snitch_stream_to_snitch,
+        "reduce-hadamard": get_reduce_hadamard_pass,
+        "gate-cancellation": get_gate_cancellation_pass,
         "inline-snrt": get_convert_snrt_to_riscv,
         "convert-stencil-to-ll-mlir": get_convert_stencil_to_ll_mlir,
         "cse": get_cse,

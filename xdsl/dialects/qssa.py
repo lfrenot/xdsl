@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from xdsl.dialects import qref
 from xdsl.dialects.builtin import IntegerType
 from xdsl.dialects.quantum import AngleAttr
-from xdsl.ir import Dialect, ParametrizedAttribute, SSAValue, TypeAttribute
+from xdsl.ir import Dialect, Operation, ParametrizedAttribute, SSAValue, TypeAttribute
 from xdsl.irdl import (
     IRDLOperation,
     VarOpResult,
@@ -59,6 +59,23 @@ class QssaBase(IRDLOperation, ABC):
         raise NotImplementedError()
 
 
+class Unitary(QssaBase, ABC):
+    """
+    Unitary gates have an inverse operation
+    """
+
+    @abstractmethod
+    def can_cancel(self, other: Operation) -> bool:
+        """
+        Is 'other' the inverse of this operation
+        """
+        raise NotImplementedError()
+
+    @property
+    def is_gate(self) -> bool:
+        return True
+
+
 @irdl_op_definition
 class QubitAllocOp(QssaBase):
     name = "qssa.alloc"
@@ -103,7 +120,7 @@ class QubitAllocOp(QssaBase):
 
 
 @irdl_op_definition
-class HGateOp(QssaBase):
+class HGateOp(Unitary):
     name = "qssa.h"
 
     input = operand_def(qubit)
@@ -125,13 +142,12 @@ class HGateOp(QssaBase):
             attributes=self.attributes,
         )
 
-    @property
-    def is_gate(self) -> bool:
-        return True
+    def can_cancel(self, other: Operation) -> bool:
+        return isinstance(other, HGateOp)
 
 
 @irdl_op_definition
-class CNotGateOp(QssaBase):
+class CNotGateOp(Unitary):
     name = "qssa.cnot"
 
     in1 = operand_def(qubit)
@@ -157,13 +173,12 @@ class CNotGateOp(QssaBase):
             attributes=self.attributes,
         )
 
-    @property
-    def is_gate(self) -> bool:
-        return True
+    def can_cancel(self, other: Operation) -> bool:
+        return isinstance(other, CNotGateOp)
 
 
 @irdl_op_definition
-class RZGateOp(QssaBase):
+class RZGateOp(Unitary):
     name = "qssa.rz"
 
     input = operand_def(qubit)
@@ -189,9 +204,8 @@ class RZGateOp(QssaBase):
             properties=self.properties,
         )
 
-    @property
-    def is_gate(self) -> bool:
-        return True
+    def can_cancel(self, other: Operation) -> bool:
+        return isinstance(other, RZGateOp) and other.angle == -self.angle
 
 
 @irdl_op_definition
