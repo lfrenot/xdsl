@@ -1,6 +1,5 @@
 // RUN: xdsl-opt --allow-unregistered-dialect %s -p cse | filecheck %s
 
-// CHECK-DAG: #[[$MAP:.*]] = affine_map<(d0) -> (d0 mod 2)>
 #map0 = affine_map<(d0) -> (d0 mod 2)>
 
 func.func @simple_constant() -> (i32, i32) {
@@ -18,14 +17,13 @@ func.func @simple_constant() -> (i32, i32) {
   func.func @basic() -> (index, index) {
     %2 = arith.constant 0 : index
     %3 = arith.constant 0 : index
-    %4 = "affine.apply"(%2) <{"map" = affine_map<(d0) -> ((d0 mod 2))>}> : (index) -> index
-    %5 = "affine.apply"(%3) <{"map" = affine_map<(d0) -> ((d0 mod 2))>}> : (index) -> index
+    %4 = affine.apply affine_map<(d0) -> ((d0 mod 2))>(%2)
+    %5 = affine.apply affine_map<(d0) -> ((d0 mod 2))>(%3)
     func.return %4, %5 : index, index
   }
 
-// CHECK:         func.func @basic() -> (index, index) {
-// CHECK-NEXT:      %0 = arith.constant 0 : index
-// CHECK-NEXT:      %1 = "affine.apply"(%0) <{"map" = affine_map<(d0) -> ((d0 mod 2))>}> : (index) -> index
+// CHECK:         %0 = arith.constant 0 : index
+// CHECK-NEXT:      %1 = affine.apply affine_map<(d0) -> ((d0 mod 2))> (%0)
 // CHECK-NEXT:      func.return %1, %1 : index, index
 // CHECK-NEXT:    }
 
@@ -44,8 +42,7 @@ func.func @simple_constant() -> (i32, i32) {
     func.return %15 : f32
   }
 
-// CHECK:         func.func @many(%arg0 : f32, %arg1 : f32) -> f32 {
-// CHECK-NEXT:      %0 = arith.addf %arg0, %arg1 : f32
+// CHECK:      %0 = arith.addf %arg0, %arg1 : f32
 // CHECK-NEXT:      %1 = arith.addf %0, %0 : f32
 // CHECK-NEXT:      %2 = arith.addf %1, %1 : f32
 // CHECK-NEXT:      %3 = arith.addf %2, %2 : f32
@@ -60,8 +57,7 @@ func.func @different_ops() -> (i32, i32) {
     func.return %16, %17 : i32, i32
   }
 
-// CHECK:         func.func @different_ops() -> (i32, i32) {
-// CHECK-NEXT:      %0 = arith.constant 0 : i32
+// CHECK:      %0 = arith.constant 0 : i32
 // CHECK-NEXT:      %1 = arith.constant 1 : i32
 // CHECK-NEXT:      func.return %0, %1 : i32, i32
 // CHECK-NEXT:    }
@@ -74,8 +70,7 @@ func.func @different_ops() -> (i32, i32) {
     %19 = "memref.cast"(%arg0_1) : (memref<*xf32>) -> memref<4x?xf32>
     func.return %18, %19 : memref<?x?xf32>, memref<4x?xf32>
   }
-// CHECK:         func.func @different_results(%arg0 : memref<*xf32>) -> (memref<?x?xf32>, memref<4x?xf32>) {
-// CHECK-NEXT:      %0 = "memref.cast"(%arg0) : (memref<*xf32>) -> memref<?x?xf32>
+// CHECK:      %0 = "memref.cast"(%arg0) : (memref<*xf32>) -> memref<?x?xf32>
 // CHECK-NEXT:      %1 = "memref.cast"(%arg0) : (memref<*xf32>) -> memref<4x?xf32>
 // CHECK-NEXT:      func.return %0, %1 : memref<?x?xf32>, memref<4x?xf32>
 // CHECK-NEXT:    }
@@ -89,8 +84,7 @@ func.func @different_ops() -> (i32, i32) {
     func.return %20, %21, %22 : i1, i1, i1
   }
 
-// CHECK:         func.func @different_attributes(%arg0 : index, %arg1 : index) -> (i1, i1, i1) {
-// CHECK-NEXT:      %0 = arith.cmpi slt, %arg0, %arg1 : index
+// CHECK:      %0 = arith.cmpi slt, %arg0, %arg1 : index
 // CHECK-NEXT:      %1 = arith.cmpi ne, %arg0, %arg1 : index
 // CHECK-NEXT:      func.return %0, %1, %1 : i1, i1, i1
 // CHECK-NEXT:    }
@@ -102,8 +96,7 @@ func.func @different_ops() -> (i32, i32) {
     %24 = memref.alloc() : memref<2x1xf32>
     func.return %23, %24 : memref<2x1xf32>, memref<2x1xf32>
   }
-// CHECK:         func.func @side_effect() -> (memref<2x1xf32>, memref<2x1xf32>) {
-// CHECK-NEXT:      %0 = memref.alloc() : memref<2x1xf32>
+// CHECK:      %0 = memref.alloc() : memref<2x1xf32>
 // CHECK-NEXT:      %1 = memref.alloc() : memref<2x1xf32>
 // CHECK-NEXT:      func.return %0, %1 : memref<2x1xf32>, memref<2x1xf32>
 // CHECK-NEXT:    }
@@ -122,8 +115,7 @@ func.func @different_ops() -> (i32, i32) {
     func.return
   }
 
-// CHECK:         func.func @down_propagate_for() {
-// CHECK-NEXT:      %0 = arith.constant 1 : i32
+// CHECK:      %0 = arith.constant 1 : i32
 // CHECK-NEXT:      "affine.for"() <{"lowerBoundMap" = affine_map<() -> (0)>, "operandSegmentSizes" = array<i32: 0, 0, 0>, "step" = 1 : index, "upperBoundMap" = affine_map<() -> (4)>}> ({
 // CHECK-NEXT:      ^0(%arg0 : index):
 // CHECK-NEXT:        "foo"(%0, %0) : (i32, i32) -> ()
@@ -138,7 +130,7 @@ func.func @different_ops() -> (i32, i32) {
 // We do not have this Region Kind disctinction; so everything here works on the pessimistic
 // Graph Rewgion assumption.
 
-// CHECK-LABEL: @down_propagate
+// CHECK-LABEL: @down_propagate()
 func.func @down_propagate() -> i32 {
     %27 = arith.constant 1 : i32
     %28 = arith.constant true
@@ -150,8 +142,7 @@ func.func @down_propagate() -> i32 {
     func.return %30 : i32
   }
 
-// CHECK:         func.func @down_propagate() -> i32 {
-// CHECK-NEXT:      %0 = arith.constant 1 : i32
+// CHECK:      %0 = arith.constant 1 : i32
 // CHECK-NEXT:      %1 = arith.constant true
 // CHECK-NEXT:      "cf.cond_br"(%1, %0) [^0, ^1] <{"operandSegmentSizes" = array<i32: 1, 0, 1>}> : (i1, i32) -> ()
 // CHECK-NEXT:    ^0:
@@ -174,8 +165,7 @@ func.func @down_propagate() -> i32 {
     func.return %32 : i32
   }
 
-// CHECK:         func.func @up_propagate_for() -> i32 {
-// CHECK-NEXT:      "affine.for"() <{"lowerBoundMap" = affine_map<() -> (0)>, "operandSegmentSizes" = array<i32: 0, 0, 0>, "step" = 1 : index, "upperBoundMap" = affine_map<() -> (4)>}> ({
+// CHECK:      "affine.for"() <{"lowerBoundMap" = affine_map<() -> (0)>, "operandSegmentSizes" = array<i32: 0, 0, 0>, "step" = 1 : index, "upperBoundMap" = affine_map<() -> (4)>}> ({
 // CHECK-NEXT:      ^0(%arg0 : index):
 // CHECK-NEXT:        %0 = arith.constant 1 : i32
 // CHECK-NEXT:        "foo"(%0) : (i32) -> ()
@@ -185,7 +175,7 @@ func.func @down_propagate() -> i32 {
 // CHECK-NEXT:      func.return %1 : i32
 // CHECK-NEXT:    }
 
-// CHECK-LABEL: func @up_propagate
+// CHECK-LABEL: func @up_propagate()
 func.func @up_propagate() -> i32 {
     %33 = arith.constant 0 : i32
     %34 = arith.constant true
@@ -199,8 +189,7 @@ func.func @up_propagate() -> i32 {
     func.return %38 : i32
   }
 
-// CHECK:         func.func @up_propagate() -> i32 {
-// CHECK-NEXT:      %0 = arith.constant 0 : i32
+// CHECK:      %0 = arith.constant 0 : i32
 // CHECK-NEXT:      %1 = arith.constant true
 // CHECK-NEXT:      "cf.cond_br"(%1, %0) [^0, ^1] <{"operandSegmentSizes" = array<i32: 1, 0, 1>}> : (i1, i32) -> ()
 // CHECK-NEXT:    ^0:
@@ -231,8 +220,7 @@ func.func @up_propagate_region() -> i32 {
     func.return %39 : i32
   }
 
-// CHECK:         func.func @up_propagate_region() -> i32 {
-// CHECK-NEXT:      %0 = "foo.region"() ({
+// CHECK:      %0 = "foo.region"() ({
 // CHECK-NEXT:        %1 = arith.constant 0 : i32
 // CHECK-NEXT:        %2 = arith.constant true
 // CHECK-NEXT:        "cf.cond_br"(%2, %1) [^0, ^1] <{"operandSegmentSizes" = array<i32: 1, 0, 1>}> : (i1, i32) -> ()
@@ -263,8 +251,7 @@ func.func @nested_isolated() -> i32 {
     func.return %46 : i32
   }
 
-// CHECK:         func.func @nested_isolated() -> i32 {
-// CHECK-NEXT:      %0 = arith.constant 1 : i32
+// CHECK:      %0 = arith.constant 1 : i32
 // CHECK-NEXT:      func.func @nested_func() {
 // CHECK-NEXT:        %1 = arith.constant 1 : i32
 // CHECK-NEXT:        "foo.yield"(%1) : (i32) -> ()
@@ -290,8 +277,7 @@ func.func @use_before_def() {
     func.return
   }
 
-// CHECK:         func.func @use_before_def() {
-// CHECK-NEXT:      "test.graph_region"() ({
+// CHECK:      "test.graph_region"() ({
 // CHECK-NEXT:        %0 = arith.addi %1, %2 : i32
 // CHECK-NEXT:        %1 = arith.constant 1 : i32
 // CHECK-NEXT:        %2 = arith.constant 1 : i32
@@ -311,17 +297,14 @@ func.func @use_before_def() {
     func.return %54 : i32
   }
 
-// CHECK:         func.func @remove_direct_duplicated_read_op() -> i32 {
-// CHECK-NEXT:      %0 = "test.op_with_memread"() : () -> i32
-// CHECK-NEXT:      %1 = "test.op_with_memread"() : () -> i32
-// CHECK-NEXT:      %2 = arith.addi %0, %1 : i32
-// CHECK-NEXT:      func.return %2 : i32
+// CHECK:         %0 = "test.op_with_memread"() : () -> i32
+// CHECK-NEXT:      %1 = arith.addi %0, %0 : i32
+// CHECK-NEXT:      func.return %1 : i32
 // CHECK-NEXT:    }
 
 
 /// This test is checking that CSE is removing duplicated read op that follow
 /// other.
-/// NB: xDSL doesn't, we don't have the notion of "read" ops.
 // CHECK-LABEL: @remove_multiple_duplicated_read_op
   func.func @remove_multiple_duplicated_read_op() -> i64 {
     %55 = "test.op_with_memread"() : () -> i64
@@ -334,21 +317,15 @@ func.func @use_before_def() {
     func.return %61 : i64
   }
 
-// CHECK:         func.func @remove_multiple_duplicated_read_op() -> i64 {
-// CHECK-NEXT:      %0 = "test.op_with_memread"() : () -> i64
-// CHECK-NEXT:      %1 = "test.op_with_memread"() : () -> i64
-// CHECK-NEXT:      %2 = arith.addi %0, %1 : i64
-// CHECK-NEXT:      %3 = "test.op_with_memread"() : () -> i64
-// CHECK-NEXT:      %4 = arith.addi %2, %3 : i64
-// CHECK-NEXT:      %5 = "test.op_with_memread"() : () -> i64
-// CHECK-NEXT:      %6 = arith.addi %4, %5 : i64
-// CHECK-NEXT:      func.return %6 : i64
+// CHECK:        %0 = "test.op_with_memread"() : () -> i64
+// CHECK-NEXT:      %1 = arith.addi %0, %0 : i64
+// CHECK-NEXT:      %2 = arith.addi %1, %0 : i64
+// CHECK-NEXT:      %3 = arith.addi %2, %0 : i64
+// CHECK-NEXT:      func.return %3 : i64
 // CHECK-NEXT:    }
 
 /// This test is checking that CSE is not removing duplicated read op that
 /// have write op in between.
-/// NB: xDSL doesn't, we don't have the notion of "read" ops.
-// CHECK-LABEL: @dont_remove_duplicated_read_op_with_sideeffecting
 func.func @dont_remove_duplicated_read_op_with_sideeffecting() -> i32 {
     %62 = "test.op_with_memread"() : () -> i32
     "test.op_with_memwrite"() : () -> ()
@@ -357,8 +334,7 @@ func.func @dont_remove_duplicated_read_op_with_sideeffecting() -> i32 {
     func.return %64 : i32
   }
 
-// CHECK:         func.func @dont_remove_duplicated_read_op_with_sideeffecting() -> i32 {
-// CHECK-NEXT:      %0 = "test.op_with_memread"() : () -> i32
+// CHECK:      %0 = "test.op_with_memread"() : () -> i32
 // CHECK-NEXT:      "test.op_with_memwrite"() : () -> ()
 // CHECK-NEXT:      %1 = "test.op_with_memread"() : () -> i32
 // CHECK-NEXT:      %2 = arith.addi %0, %1 : i32
@@ -588,7 +564,6 @@ func.func @no_cse_multiple_regions_side_effect(%arg0_12 : i1, %arg1_9 : memref<5
 // CHECK-NEXT:      func.return %0, %2 : memref<5xf32>, memref<5xf32>
 // CHECK-NEXT:    }
 
-// xDSL doesn't have the notion of sideffects.
  func.func @cse_recursive_effects_success() -> (i32, i32, i32) {
     %98 = "test.op_with_memread"() : () -> i32
     %99 = arith.constant true
@@ -613,8 +588,7 @@ func.func @no_cse_multiple_regions_side_effect(%arg0_12 : i1, %arg1_9 : memref<5
 // CHECK-NEXT:        %4 = arith.constant 24 : i32
 // CHECK-NEXT:        scf.yield %4 : i32
 // CHECK-NEXT:      }) : (i1) -> i32
-// CHECK-NEXT:      %5 = "test.op_with_memread"() : () -> i32
-// CHECK-NEXT:      func.return %0, %5, %2 : i32, i32, i32
+// CHECK-NEXT:      func.return %0, %0, %2 : i32, i32, i32
 // CHECK-NEXT:    }
 
 // xDSL doesn't have the notion of sideffects.

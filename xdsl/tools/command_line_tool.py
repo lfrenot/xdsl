@@ -96,6 +96,11 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
 
         return common_subexpression_elimination.CommonSubexpressionElimination
 
+    def get_csl_stencil_to_csl_wrapper():
+        from xdsl.transforms import csl_stencil_to_csl_wrapper
+
+        return csl_stencil_to_csl_wrapper.CslStencilToCslWrapperPass
+
     def get_dce():
         from xdsl.transforms import dead_code_elimination
 
@@ -176,6 +181,16 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
 
         return memref_stream_infer_fill.MemrefStreamInferFillPass
 
+    def get_memref_stream_interleave():
+        from xdsl.transforms import memref_stream_interleave
+
+        return memref_stream_interleave.MemrefStreamInterleavePass
+
+    def get_memref_stream_tile_outer_loops():
+        from xdsl.transforms import memref_stream_tile_outer_loops
+
+        return memref_stream_tile_outer_loops.MemrefStreamTileOuterLoopsPass
+
     def get_mlir_opt():
         from xdsl.transforms import mlir_opt
 
@@ -241,10 +256,12 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
 
         return convert_onnx_to_linalg.ConvertOnnxToLinalgPass
 
-    def get_convert_memref_stream_to_snitch():
+    def get_convert_memref_stream_to_snitch_stream():
         from xdsl.transforms import convert_memref_stream_to_snitch_stream
 
-        return convert_memref_stream_to_snitch_stream.ConvertMemrefStreamToSnitch
+        return (
+            convert_memref_stream_to_snitch_stream.ConvertMemrefStreamToSnitchStreamPass
+        )
 
     def get_convert_print_format_to_riscv_debug():
         from xdsl.backend.riscv.lowering import convert_print_format_to_riscv_debug
@@ -333,6 +350,18 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
 
         return test_lower_snitch_stream_to_asm.TestLowerSnitchStreamToAsm
 
+    def get_test_lower_memref_stream_to_snitch_stream():
+        from xdsl.transforms import test_lower_memref_stream_to_snitch_stream
+
+        return (
+            test_lower_memref_stream_to_snitch_stream.TestLowerMemrefStreamToSnitchStream
+        )
+
+    def get_test_optimise_memref_stream():
+        from xdsl.transforms import test_optimise_memref_stream
+
+        return test_optimise_memref_stream.TestOptimiseMemrefStream
+
     return {
         "arith-add-fastmath": get_arith_add_fastmath,
         "loop-hoist-memref": get_loop_hoist_memref,
@@ -347,7 +376,7 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
         "convert-memref-to-riscv": get_convert_memref_to_riscv,
         "convert-ml-program-to-memref": get_convert_ml_program_to_memref,
         "convert-onnx-to-linalg": get_convert_onnx_to_linalg,
-        "convert-memref-stream-to-snitch": get_convert_memref_stream_to_snitch,
+        "convert-memref-stream-to-snitch-stream": get_convert_memref_stream_to_snitch_stream,
         "convert-print-format-to-riscv-debug": get_convert_print_format_to_riscv_debug,
         "convert-riscv-to-llvm": get_convert_riscv_scf_to_llvm,
         "convert-qref-to-qssa": get_convert_qref_to_qssa,
@@ -360,6 +389,7 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
         "inline-snrt": get_convert_snrt_to_riscv,
         "convert-stencil-to-ll-mlir": get_convert_stencil_to_ll_mlir,
         "cse": get_cse,
+        "csl-stencil-to-csl-wrapper": get_csl_stencil_to_csl_wrapper,
         "dce": get_dce,
         "distribute-stencil": get_distribute_stencil,
         "dmp-to-mpi": get_lower_halo_to_mpi,
@@ -380,6 +410,8 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
         "memref-stream-fold-fill": get_memref_stream_fold_fill,
         "memref-stream-generalize-fill": get_memref_stream_generalize_fill,
         "memref-stream-infer-fill": get_memref_stream_infer_fill,
+        "memref-stream-interleave": get_memref_stream_interleave,
+        "memref-stream-tile-outer-loops": get_memref_stream_tile_outer_loops,
         "mlir-opt": get_mlir_opt,
         "printf-to-llvm": get_printf_to_llvm,
         "printf-to-putchar": get_printf_to_putchar,
@@ -397,6 +429,8 @@ def get_all_passes() -> dict[str, Callable[[], type[ModulePass]]]:
         "stencil-to-csl-stencil": get_stencil_to_csl_stencil,
         "stencil-unroll": get_stencil_unroll,
         "test-lower-snitch-stream-to-asm": get_test_lower_snitch_stream_to_asm,
+        "test-lower-memref-stream-to-snitch-stream": get_test_lower_memref_stream_to_snitch_stream,
+        "test-optimise-memref-stream": get_test_optimise_memref_stream,
     }
 
 
