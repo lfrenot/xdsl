@@ -1,16 +1,10 @@
 import marimo
 
-__generated_with = "0.7.9"
+__generated_with = "0.7.11"
 app = marimo.App(width="medium")
 
 
-@app.cell
-def __():
-    import marimo as mo
-    return mo,
-
-
-@app.cell
+@app.cell(hide_code=True)
 def __(mo):
     mo.md(
         """
@@ -25,7 +19,7 @@ def __(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def __():
     # Import all the necessary functionality from xDSL for this notebook
     # If you see an error about xdsl not being defined run this cell manually
@@ -212,23 +206,7 @@ def __(mo):
     return k, m, max_val, min_val, n
 
 
-@app.cell
-def __(k, m, mo, n):
-    mo.md(
-        f"""
-        We can parametrize the shapes of the matrices operated on:
-
-        {m}{m.value}
-
-        {n}{n.value}
-
-        {k}{k.value}
-        """
-    )
-    return
-
-
-@app.cell
+@app.cell(hide_code=True)
 def __(k, m, mo, n):
     a_shape = (m.value, k.value)
     b_shape = (k.value, n.value)
@@ -236,22 +214,25 @@ def __(k, m, mo, n):
 
     mo.md(
         f"""
+        We can parametrize the shapes of the matrices operated on:
 
-        ```
-        A: {'x'.join(str(dim) for dim in a_shape)}xf64 B: {'x'.join(str(dim) for dim in b_shape)}xf64 C: {'x'.join(str(dim) for dim in c_shape)}xf64
-        ```
+        {m} `A: {m.value}x_ B: _x_ C: {m.value}x_`
+
+        {n} `A: _x_ B: _x{n.value} C: _x{n.value}`
+
+        {k} `A: _x{m.value} B: {k.value}x_ C: _x_`
         """
     )
     return a_shape, b_shape, c_shape
 
 
-@app.cell
+@app.cell(hide_code=True)
 def __(mo):
-    mo.md("### Compiling to RISC-V")
+    mo.md("""### Compiling to RISC-V""")
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def __(MLContext, get_all_dialects):
     ctx = MLContext()
 
@@ -260,9 +241,9 @@ def __(MLContext, get_all_dialects):
     return ctx, dialect_factory, dialect_name
 
 
-@app.cell
+@app.cell(hide_code=True)
 def __(mo):
-    mo.md("We can take this representation, and lower to RISC-V-specific dialects:")
+    mo.md("""We can take this representation, and lower to RISC-V-specific dialects:""")
     return
 
 
@@ -357,7 +338,7 @@ def __(
 
 @app.cell
 def __(mo):
-    mo.md("This representation of the program in xDSL corresponds ~1:1 to RISC-V assembly, and we can use a helper function to print that out.")
+    mo.md("""This representation of the program in xDSL corresponds ~1:1 to RISC-V assembly, and we can use a helper function to print that out.""")
     return
 
 
@@ -374,7 +355,7 @@ def __(asm_html, mo, riscv_asm_module, riscv_code):
     return riscv_asm,
 
 
-@app.cell
+@app.cell(hide_code=True)
 def __(mo):
     mo.md(
         """
@@ -424,9 +405,9 @@ def __(
     )
 
 
-@app.cell
+@app.cell(hide_code=True)
 def __(mo):
-    mo.md("We can then lower this to assembly that includes assembly instructions from the Snitch-extended ISA:")
+    mo.md("""We can then lower this to assembly that includes assembly instructions from the Snitch-extended ISA:""")
     return
 
 
@@ -557,7 +538,7 @@ def __(
 
     snitch_c_shaped = ShapedArray(TypedPtr.new_float64([0.0] * c_len), c_shape)
 
-    register_implementations(snitch_interpreter, ctx, include_wgpu=False)
+    register_implementations(snitch_interpreter, ctx, include_wgpu=False, include_onnx=False)
 
     snitch_interpreter.call_op(
         "matmul",
@@ -671,19 +652,25 @@ def __(k, m, mo, n, riscv_op_counter, snitch_op_counter):
 @app.cell
 def __(ModuleOp, mo):
     import html as htmllib
+    from io import StringIO
+
 
     def module_html(module: ModuleOp) -> str:
+        element = mo.ui.code_editor(
+            str(module), disabled=True
+        )
         return f"""\
-        <div style="overflow-y: scroll; height:400px;"><small><code style="white-space: pre-wrap;">{htmllib.escape(str(module))}</code></small></div>
+        <div style="width: 900px; height: 400px; overflow: auto;">{mo.as_html(element)}</div>
         """
 
     def asm_html(asm: str) -> str:
+        element = mo.ui.code_editor(
+            asm, language="python", disabled=True
+        )
         return f"""\
-        <div style="overflow-y: scroll; height:400px;">{mo.as_html(mo.ui.code_editor(
-                asm, language="python", disabled=True
-            ))}</div>
+        <div style="width: 900px; height: 400px; overflow: auto;">{mo.as_html(element)}</div>
         """
-    return asm_html, htmllib, module_html
+    return StringIO, asm_html, htmllib, module_html
 
 
 @app.cell
@@ -725,6 +712,12 @@ def __(Counter, ModuleOp, ModulePass, PipelinePass, ctx, mo, module_html):
             ))
         return (res, mo.carousel(d))
     return pipeline_accordion, spec_str
+
+
+@app.cell
+def __():
+    import marimo as mo
+    return mo,
 
 
 if __name__ == "__main__":
