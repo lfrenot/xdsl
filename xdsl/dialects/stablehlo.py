@@ -255,6 +255,71 @@ class AndOp(IRDLOperation):
 
 
 @irdl_op_definition
+class DotGeneralOp(IRDLOperation):
+    """
+    #### Semantics
+
+    Computes dot products between slices of `lhs` and slices of `rhs` and produces a
+    `result` tensor.
+
+    `precision_config` controls the tradeoff between speed and accuracy for
+    computations on accelerator backends. This can be one of the following (at the
+    moment, the semantics of these enum values is underspecified, but we are
+    planning to address this in
+    [#755](https://github.com/openxla/stablehlo/issues/755)):
+
+    * `DEFAULT`: Fastest calculation, but least accurate approximation to the
+    original number.
+    * `HIGH`: Slower calculation, but more accurate approximation to the
+    original number.
+    * `HIGHEST`: Slowest calculation, but most accurate approximation to the
+    original number.
+
+    A `DotAlgorithm` defines the main properties of the algorithm used to implement
+    the dot operation, which also defines the precision. If the algorithm attribute
+    fields are set, then the `precision_config` must be `DEFAULT`. `DotAlgorithms`
+    do not have a default value, as the default parameters are implementation
+    defined. As such, all dot algorithm fields may be set to `None` to specify an
+    empty dot algorithm, which will instead use the `precision_config` value.
+
+    https://github.com/openxla/stablehlo/blob/main/docs/spec.md#dot_general
+    """
+
+    name = "stablehlo.dot_general"
+
+    T = Annotated[IntegerTensorType, ConstraintVar("T")]
+
+    lhs = operand_def(T)
+    rhs = operand_def(T)
+
+    result = result_def(T)
+
+    dot_dimension_numbers = attr_def(DotAttr)
+    precision_config = attr_def(ArrayAttr[PrecisionAttr])
+
+    # TODO: Algorithm
+
+    def __init__(
+        self,
+        lhs: SSAValue,
+        rhs: SSAValue,
+        result_type: Attribute,
+        dot_dimension_numbers: DotAttr,
+        precision_config: PrecisionAttr,
+    ):
+        super().__init__(
+            operands=(lhs, rhs),
+            result_types=(result_type,),
+            attributes={
+                "dot_dimension_numbers": dot_dimension_numbers,
+                "precision_config": precision_config,
+            },
+        )
+
+    # TODO: verification
+
+
+@irdl_op_definition
 class MultiplyOp(ElementwiseBinaryOperation):
     """
     Performs element-wise product of two tensors `lhs` and `rhs` and produces a
@@ -372,9 +437,10 @@ StableHLO = Dialect(
         AbsOp,
         AddOp,
         AndOp,
+        DotGeneralOp,
         MultiplyOp,
-        SubtractOp,
         ReturnOp,
+        SubtractOp,
         TransposeOp,
     ],
     [

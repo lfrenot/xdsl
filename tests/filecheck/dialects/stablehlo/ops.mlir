@@ -31,5 +31,51 @@
 // CHECK: %and = "stablehlo.and"(%t0, %t0) : (tensor<i32>, tensor<i32>) -> tensor<i32>
 %and = "stablehlo.and"(%t0, %t0) : (tensor<i32>, tensor<i32>) -> tensor<i32>
 
+// CHECK-NEXT:    %dot_general_arg = "test.op"() : () -> tensor<2x2x2xi64>
+%dot_general_arg = "test.op"() : () -> tensor<2x2x2xi64>
+
+// CHECK-NEXT:    %dot_general = "stablehlo.dot_general"(%dot_general_arg, %dot_general_arg) {"dot_dimension_numbers" = #stablehlo.dot<
+// CHECK-NEXT:      lhs_batching_dimensions = [0],
+// CHECK-NEXT:      rhs_batching_dimensions = [0],
+// CHECK-NEXT:      lhs_contracting_dimensions = [2],
+// CHECK-NEXT:      rhs_contracting_dimensions = [1]
+// CHECK-NEXT:    >, "precision_config" = [#stablehlo<precision DEFAULT>, #stablehlo<precision DEFAULT>]} : (tensor<2x2x2xi64>, tensor<2x2x2xi64>) -> tensor<2x2x2xi64>
+// %lhs: [
+//        [[1, 2],
+//         [3, 4]],
+//        [[5, 6],
+//         [7, 8]]
+//       ]
+// %rhs: [
+//        [[1, 0],
+//         [0, 1]],
+//        [[1, 0],
+//         [0, 1]]
+//       ]
+%dot_general = "stablehlo.dot_general"(%dot_general_arg, %dot_general_arg) {
+  dot_dimension_numbers = #stablehlo.dot<
+    lhs_batching_dimensions = [0],
+    rhs_batching_dimensions = [0],
+    lhs_contracting_dimensions = [2],
+    rhs_contracting_dimensions = [1]
+  >,
+  precision_config = [#stablehlo<precision DEFAULT>, #stablehlo<precision DEFAULT>]
+  // algorithm = #stablehlo.dot_algorithm<
+  //   lhs_precision_type = tf32,
+  //   rhs_precision_type = tf32,
+  //   accumulation_type = f32,
+  //   lhs_component_count = 1,
+  //   rhs_component_count = 1,
+  //   num_primitive_operations = 1,
+  //   allow_imprecise_accumulation = false
+  // >
+} : (tensor<2x2x2xi64>, tensor<2x2x2xi64>) -> tensor<2x2x2xi64>
+// %result: [
+//           [[1, 2],
+//            [3, 4]],
+//           [[5, 6],
+//            [7, 8]]
+//          ]
+
 // CHECK: "stablehlo.return"(%t0) : (tensor<i32>) -> ()
 "stablehlo.return"(%t0) : (tensor<i32>) -> ()
