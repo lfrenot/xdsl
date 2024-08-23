@@ -1015,6 +1015,10 @@ class OpDef:
                 if field_name[:2] == "__" and field_name[-2:] == "__":
                     continue
 
+                if field_name == "__pydevd_ret_val_dict":
+                    # Debugger field
+                    continue
+
                 # Methods, properties, and functions are allowed
                 if isinstance(
                     value, FunctionType | PropertyType | classmethod | staticmethod

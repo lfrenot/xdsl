@@ -25,6 +25,7 @@ from xdsl.ir import (
     Dialect,
     EnumAttribute,
     ParametrizedAttribute,
+    Region,
     SpacedOpaqueSyntaxAttribute,
     SSAValue,
     StrEnum,
@@ -33,12 +34,15 @@ from xdsl.irdl import (
     ConstraintVar,
     IRDLOperation,
     ParameterDef,
+    SameVariadicOperandSize,
     attr_def,
     irdl_attr_definition,
     irdl_op_definition,
     operand_def,
+    region_def,
     result_def,
     var_operand_def,
+    var_result_def,
 )
 from xdsl.parser import AttrParser
 from xdsl.printer import Printer
@@ -357,6 +361,41 @@ class SubtractOp(ElementwiseBinaryOperation):
 
 
 @irdl_op_definition
+class ReduceOp(IRDLOperation):
+    """
+    https://github.com/openxla/stablehlo/blob/main/docs/spec.md#reduce
+    """
+
+    name = "stablehlo.reduce"
+
+    inputs = var_operand_def(AnyTensorType)
+    init_values = var_operand_def()
+    dimensions = attr_def(DenseArrayBase)
+    res = var_result_def(AnyTensorType)
+    body = region_def()
+
+    irdl_options = (SameVariadicOperandSize(),)
+
+    def __init__(
+        self,
+        inputs: Sequence[SSAValue],
+        init_values: Sequence[SSAValue],
+        dimensions: DenseArrayBase | Sequence[int],
+        body: Region,
+    ):
+        if not isinstance(dimensions, DenseArrayBase):
+            dimensions = DenseArrayBase.from_list(i64, dimensions)
+        super().__init__(
+            operands=(inputs, init_values),
+            regions=(body,),
+            attributes={
+                "dimensions": dimensions,
+            },
+            result_types=(tuple(arg.type for arg in init_values),),
+        )
+
+
+@irdl_op_definition
 class ReturnOp(IRDLOperation):
     """This op is un-documented.
 
@@ -439,6 +478,7 @@ StableHLO = Dialect(
         AndOp,
         DotGeneralOp,
         MultiplyOp,
+        ReduceOp,
         ReturnOp,
         SubtractOp,
         TransposeOp,

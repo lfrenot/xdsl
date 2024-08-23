@@ -77,5 +77,18 @@
 //            [7, 8]]
 //          ]
 
+%reduce0, %reduce1 = "test.op"(): () -> (tensor<1x6xi64>, tensor<i64>)
+
+// %input = [[0, 1, 2, 3, 4, 5]]
+// %init_value = 0
+%reduce_res = "stablehlo.reduce"(%reduce0, %reduce1) ({
+  ^bb0(%arg0: tensor<i64>, %arg1: tensor<i64>):
+    %0 = "stablehlo.add"(%arg0, %arg1) : (tensor<i64>, tensor<i64>) -> tensor<i64>
+    "stablehlo.return"(%0) : (tensor<i64>) -> ()
+}) {
+  dimensions = array<i64: 1>
+} : (tensor<1x6xi64>, tensor<i64>) -> tensor<1xi64>
+// %result = [15]
+
 // CHECK: "stablehlo.return"(%t0) : (tensor<i32>) -> ()
 "stablehlo.return"(%t0) : (tensor<i32>) -> ()
