@@ -79,12 +79,16 @@ class BaseParser:
     ) -> NoReturn: ...
 
     @contextmanager
+    def delimited(self, begin: PunctuationSpelling, end: PunctuationSpelling):
+        self.parse_punctuation(begin)
+        yield
+        self.parse_punctuation(end)
+
+    @contextmanager
     def in_angle_brackets(self):
         self.parse_punctuation("<")
-        try:
-            yield
-        finally:
-            self.parse_punctuation(">")
+        yield
+        self.parse_punctuation(">")
 
     def raise_error(
         self,

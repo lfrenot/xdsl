@@ -70,7 +70,7 @@ from xdsl.ir import (
 )
 from xdsl.traits import IsolatedFromAbove, IsTerminator
 from xdsl.utils.diagnostic import Diagnostic
-from xdsl.utils.lexer import Lexer
+from xdsl.utils.lexer import Lexer, PunctuationSpelling
 
 indentNumSpaces = 2
 
@@ -111,12 +111,16 @@ class Printer:
         return self._block_names[-1]
 
     @contextmanager
+    def delimited(self, begin: PunctuationSpelling, end: PunctuationSpelling):
+        self.print_string(begin)
+        yield
+        self.print_string(end)
+
+    @contextmanager
     def in_angle_brackets(self):
         self.print_string("<")
-        try:
-            yield
-        finally:
-            self.print_string(">")
+        yield
+        self.print_string(">")
 
     def print(self, *argv: Any) -> None:
         for arg in argv:

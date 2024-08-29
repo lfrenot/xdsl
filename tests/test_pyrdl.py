@@ -45,11 +45,11 @@ class IntData(Data[int]):
 
     @classmethod
     def parse_parameter(cls, parser: AttrParser) -> int:
-        with parser.in_angle_brackets():
+        with parser.delimited("<", ">"):
             return parser.parse_integer()
 
     def print_parameter(self, printer: Printer):
-        with printer.in_angle_brackets():
+        with printer.delimited("<", ">"):
             printer.print_string(str(self.data))
 
 
